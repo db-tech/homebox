@@ -258,6 +258,14 @@ func run(cfg *config.Config) error {
 	)
 
 	// =========================================================================
+	// Setup Admin User if requested
+
+	if err := app.setupAdminUser(); err != nil {
+		log.Error().Err(err).Msg("failed to set up admin user")
+		return err
+	}
+
+	// =========================================================================
 	// Start Server
 
 	logger := log.With().Caller().Logger()

@@ -16,6 +16,10 @@ aside: false
 | HBOX_OPTIONS_AUTO_INCREMENT_ASSET_ID    | true                                                                       | auto-increments the asset_id field for new items                                                                                                                                          |
 | HBOX_OPTIONS_CURRENCY_CONFIG            |                                                                            | json configuration file containing additional currencie                                                                                                                                   |
 | HBOX_OPTIONS_ALLOW_ANALYTICS            | false                                                                      | Allows the homebox team to view extremely basic information about the system that your running on. This helps make decisions regarding builds and other general decisions.                |
+| HBOX_ADMIN_CREATE                       | false                                                                      | Create an administrator user on first startup if it doesn't exist                                                                                                                         |
+| HBOX_ADMIN_NAME                         |                                                                            | Name for the administrator user                                                                                                                                                          |
+| HBOX_ADMIN_EMAIL                        |                                                                            | Email for the administrator user                                                                                                                                                          |
+| HBOX_ADMIN_PASSWORD                     |                                                                            | Password for the administrator user                                                                                                                                                       |
 | HBOX_WEB_MAX_UPLOAD                     | 10                                                                         | maximum file upload size supported in MB                                                                                                                                                  |
 | HBOX_WEB_READ_TIMEOUT                   | 10s                                                                        | Read timeout of HTTP sever                                                                                                                                                                |
 | HBOX_WEB_WRITE_TIMEOUT                  | 10s                                                                        | Write timeout of HTTP server                                                                                                                                                              |
@@ -61,6 +65,44 @@ For SQLite in production:
 - Use a secure directory for the database file
 - Use a secure backup strategy
 - Monitor the file size and consider using a different database for large installations
+
+## Administrative User Setup
+
+For improved security, especially in production:
+- Disable self-registration with `HBOX_OPTIONS_ALLOW_REGISTRATION=false`
+- Configure an initial admin user with these variables:
+  - `HBOX_ADMIN_CREATE=true` - Enable admin user creation
+  - `HBOX_ADMIN_NAME=admin` - Set admin user name 
+  - `HBOX_ADMIN_EMAIL=admin@example.com` - Set admin email
+  - `HBOX_ADMIN_PASSWORD=strong_password` - Set admin password
+
+This creates an admin user on first startup and prevents unauthorized registrations.
+
+### Example docker-compose.yml
+
+```yaml
+services:
+  homebox:
+    image: homebox
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 3100:7745
+    environment:
+      - HBOX_OPTIONS_ALLOW_REGISTRATION=false
+      - HBOX_ADMIN_CREATE=true
+      - HBOX_ADMIN_NAME=admin
+      - HBOX_ADMIN_EMAIL=admin@example.com
+      - HBOX_ADMIN_PASSWORD=changeme
+    volumes:
+      - homebox_data:/data
+
+volumes:
+  homebox_data:
+```
+
+**Important**: Change the default admin password after first login!
 :::
 
 ::: tip CLI Arguments

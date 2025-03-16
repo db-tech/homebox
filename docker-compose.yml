@@ -9,3 +9,14 @@ services:
         - BUILD_TIME=0001-01-01T00:00:00Z
     ports:
       - 3100:7745
+    environment:
+      - HBOX_OPTIONS_ALLOW_REGISTRATION=false
+      - HBOX_ADMIN_CREATE=true
+      - HBOX_ADMIN_NAME=admin
+      - HBOX_ADMIN_EMAIL=admin@example.com
+      - HBOX_ADMIN_PASSWORD=changeme
+    volumes:
+      - homebox_data:/data
+
+volumes:
+  homebox_data:
