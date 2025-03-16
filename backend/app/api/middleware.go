@@ -96,6 +96,17 @@ func getQuery(r *http.Request) (string, error) {
 	return token, nil
 }
 
+// mwRequireSuperuser is a middleware that ensures the authenticated user is a superuser
+func (a *app) mwRequireSuperuser(next errchain.Handler) errchain.Handler {
+	return errchain.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+		usr := services.UseUserCtx(r.Context())
+		if usr == nil || !usr.IsSuperuser {
+			return validate.NewRequestError(errors.New("admin privileges required"), http.StatusForbidden)
+		}
+		return next.ServeHTTP(w, r)
+	})
+}
+
 // mwAuthToken is a middleware that will check the database for a stateful token
 // and attach it's user to the request context, or return an appropriate error.
 // Authorization support is by token via Headers or Query Parameter

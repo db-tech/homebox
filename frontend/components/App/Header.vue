@@ -23,6 +23,11 @@
       href: "/items",
     },
     {
+      name: "Admin",
+      href: "/admin",
+      showIf: () => ctx.user?.isSuperuser === true,
+    },
+    {
       name: "Logout",
       action: logout,
       last: true,
@@ -81,24 +86,26 @@
       </NuxtLink>
       <div class="ml-1 mt-2 space-x-2 text-lg text-neutral-content/75">
         <template v-for="link in links">
-          <NuxtLink
-            v-if="!link.action"
-            :key="link.name"
-            class="italic transition-colors duration-200 hover:text-base-content"
-            :to="link.href"
-          >
-            {{ link.name }}
-          </NuxtLink>
-          <button
-            v-else
-            :key="link.name + 'link'"
-            for="location-form-modal"
-            class="italic transition-colors duration-200 hover:text-base-content"
-            @click="link.action"
-          >
-            {{ link.name }}
-          </button>
-          <span v-if="!link.last" :key="link.name"> / </span>
+          <template v-if="!link.showIf || link.showIf()">
+            <NuxtLink
+              v-if="!link.action"
+              :key="link.name"
+              class="italic transition-colors duration-200 hover:text-base-content"
+              :to="link.href"
+            >
+              {{ link.name }}
+            </NuxtLink>
+            <button
+              v-else
+              :key="link.name + 'link'"
+              for="location-form-modal"
+              class="italic transition-colors duration-200 hover:text-base-content"
+              @click="link.action"
+            >
+              {{ link.name }}
+            </button>
+            <span v-if="!link.last" :key="link.name"> / </span>
+          </template>
         </template>
       </div>
       <div class="mt-6 flex">

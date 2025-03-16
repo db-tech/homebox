@@ -2,6 +2,7 @@
   import type { Detail } from "~~/components/global/DetailsSection/types";
   import { themes } from "~~/lib/data/themes";
   import type { CurrenciesCurrency, NotifierCreate, NotifierOut } from "~~/lib/api/types/data-contracts";
+  import MdiShieldAccount from "~icons/mdi/shield-account";
   import MdiAccount from "~icons/mdi/account";
   import MdiMegaphone from "~icons/mdi/megaphone";
   import MdiDelete from "~icons/mdi/delete";
@@ -514,6 +515,22 @@
               </div>
             </div>
           </div>
+        </div>
+      </BaseCard>
+
+      <BaseCard v-if="auth.user?.isSuperuser">
+        <template #title>
+          <BaseSectionHeader>
+            <MdiShieldAccount class="-mt-1 mr-2" />
+            <span class=""> Admin Tools </span>
+            <template #description> Access administrative functions </template>
+          </BaseSectionHeader>
+        </template>
+        <div class="border-t-2 border-gray-300 p-4 px-6">
+          <p class="mb-4">As an administrator, you have access to additional tools to manage users and system settings.</p>
+          <BaseButton size="sm" class="btn-primary" @click="navigateTo('/admin')">
+            Go to Admin Panel
+          </BaseButton>
         </div>
       </BaseCard>
 

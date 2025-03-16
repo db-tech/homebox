@@ -133,3 +133,8 @@ func (r *UserRepository) GetSuperusers(ctx context.Context) ([]*ent.User, error)
 func (r *UserRepository) ChangePassword(ctx context.Context, uid uuid.UUID, pw string) error {
 	return r.db.User.UpdateOneID(uid).SetPassword(pw).Exec(ctx)
 }
+
+// SetSuperuser sets the superuser status for a user
+func (r *UserRepository) SetSuperuser(ctx context.Context, uid uuid.UUID, isSuperuser bool) error {
+	return r.db.User.UpdateOneID(uid).SetIsSuperuser(isSuperuser).Exec(ctx)
+}

@@ -197,6 +197,15 @@ func (svc *UserService) Login(ctx context.Context, username, password string, ex
 	return svc.createSessionToken(ctx, usr.ID, extendedSession)
 }
 
+// HashPassword hashes a password using the hasher package
+func (svc *UserService) HashPassword(password string) (string, error) {
+	hashed, err := hasher.HashPassword(password)
+	if err != nil {
+		return "", err
+	}
+	return hashed, nil
+}
+
 func (svc *UserService) Logout(ctx context.Context, token string) error {
 	hash := hasher.HashToken(token)
 	err := svc.repos.AuthTokens.DeleteToken(ctx, hash)

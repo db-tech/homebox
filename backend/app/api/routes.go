@@ -66,6 +66,9 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 			BuildTime: buildTime,
 		})))
 
+		// Set up admin routes
+		a.setupAdminRoutes(r, chain, v1Ctrl)
+
 		r.Get("/currencies", chain.ToHandlerFunc(v1Ctrl.HandleCurrency()))
 
 		providers := []v1.AuthProvider{
@@ -79,7 +82,7 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 			a.mwAuthToken,
 			a.mwRoles(RoleModeOr, authroles.RoleUser.String()),
 		}
-
+		
 		r.Get("/ws/events", chain.ToHandlerFunc(v1Ctrl.HandleCacheWS(), userMW...))
 		r.Get("/users/self", chain.ToHandlerFunc(v1Ctrl.HandleUserSelf(), userMW...))
 		r.Put("/users/self", chain.ToHandlerFunc(v1Ctrl.HandleUserSelfUpdate(), userMW...))
