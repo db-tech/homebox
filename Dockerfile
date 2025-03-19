@@ -1,5 +1,5 @@
 # Node dependencies stage
-FROM public.ecr.aws/docker/library/node:lts-alpine AS frontend-dependencies
+FROM node:lts-alpine AS frontend-dependencies
 WORKDIR /app
 
 # Install pnpm globally (caching layer)
@@ -10,7 +10,7 @@ COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --shamefully-hoist
 
 # Build Nuxt (frontend) stage
-FROM public.ecr.aws/docker/library/node:lts-alpine AS frontend-builder
+FROM node:lts-alpine AS frontend-builder
 WORKDIR /app
 
 # Install pnpm globally again (it can reuse the cache if not changed)
@@ -22,7 +22,7 @@ COPY --from=frontend-dependencies /app/node_modules ./node_modules
 RUN pnpm build
 
 # Go dependencies stage
-FROM public.ecr.aws/docker/library/golang:alpine AS builder-dependencies
+FROM golang:alpine AS builder-dependencies
 WORKDIR /go/src/app
 
 # Copy go.mod and go.sum for better caching
@@ -51,14 +51,13 @@ RUN rm -rf ./app/api/public
 COPY --from=frontend-builder /app/.output/public ./app/api/static/public
 
 # Use cache for Go build artifacts
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux go build \
+RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-s -w -X main.commit=$COMMIT -X main.buildTime=$BUILD_TIME -X main.version=$VERSION" \
     -o /go/bin/api \
     -v ./app/api/*.go
 
 # Production stage
-FROM public.ecr.aws/docker/library/alpine:latest
+FROM alpine:latest
 ENV HBOX_MODE=production
 ENV HBOX_STORAGE_DATA=/data/
 ENV HBOX_DATABASE_SQLITE_PATH=/data/homebox.db?_pragma=busy_timeout=2000&_pragma=journal_mode=WAL&_fk=1&_time_format=sqlite
