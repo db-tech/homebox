@@ -3,7 +3,7 @@ FROM node:lts-alpine AS frontend-dependencies
 WORKDIR /app
 
 # Install pnpm globally (caching layer)
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy package.json and lockfile to leverage caching
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
@@ -14,7 +14,7 @@ FROM node:lts-alpine AS frontend-builder
 WORKDIR /app
 
 # Install pnpm globally again (it can reuse the cache if not changed)
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy over source files and node_modules from dependencies stage
 COPY frontend . 

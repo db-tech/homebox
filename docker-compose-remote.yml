@@ -1,0 +1,49 @@
+# =============================================================================
+# Homebox - server deployment (whatsyourfavorite.net)
+#
+# Jenkins builds the image and tags it :latest; compose up then uses that tag.
+#
+# There is deliberately no "build:" section: the deploy copies this file to
+# /tmp/homebox-deploy, where a relative build context would point at a directory
+# with no Dockerfile. Without it, a missing image fails with a clear "image not
+# found" instead of a confusing build error. For a manual build, run
+# "docker build -t biber-tech/homebox:latest ." from the repo root first.
+#
+# Starten:  docker compose -p homebox -f docker-compose-remote.yml up -d
+#
+# The data volume is EXTERNAL on purpose: it already exists on the server and
+# holds the live SQLite database. Keeping it external means recreating the
+# container - or rolling back to an older image - never touches the data.
+#
+# Secrets (HBOX_ADMIN_*) come from .env, which Jenkins writes from a file
+# credential. They are deliberately not in this file.
+# =============================================================================
+
+services:
+  homebox:
+    image: biber-tech/homebox:latest
+    container_name: homebox
+    environment:
+      # Reverse proxy (nginx-proxy + acme-companion)
+      - VIRTUAL_HOST=homebox.dbiber.de
+      - VIRTUAL_PORT=7745
+      - LETSENCRYPT_HOST=homebox.dbiber.de
+      - LETSENCRYPT_EMAIL=info@dbiber.de
+      # App
+      - HBOX_MODE=production
+      - HBOX_STORAGE_DATA=/data/
+    env_file:
+      - .env
+    volumes:
+      - homebox_data:/data/
+    networks:
+      - service-proxy
+    restart: unless-stopped
+
+volumes:
+  homebox_data:
+    external: true
+
+networks:
+  service-proxy:
+    external: true
