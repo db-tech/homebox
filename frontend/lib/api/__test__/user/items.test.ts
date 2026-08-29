@@ -40,6 +40,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: "test-description",
       locationId: location.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(response.status).toBe(201);
 
@@ -75,6 +77,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: faker.lorem.paragraph(1),
       locationId: location.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(response.status).toBe(201);
 
@@ -130,6 +134,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: faker.lorem.paragraph(1),
       locationId: location.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(response.status).toBe(201);
 
@@ -182,6 +188,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: faker.lorem.paragraph(1),
       locationId: lastLocationId,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(response.status).toBe(201);
 
@@ -207,6 +215,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: "test-description",
       locationId: parentLocation.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(parentResponse.status).toBe(201);
     expect(parent.id).toBeTruthy();
@@ -217,6 +227,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: "test-description",
       locationId: childsLocation.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(child1Response.status).toBe(201);
     const child1ItemUpdate = {
@@ -234,6 +246,8 @@ describe("user should be able to create an item and add an attachment", () => {
       description: "test-description",
       locationId: childsLocation.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(child2Response.status).toBe(201);
     const child2ItemUpdate = {

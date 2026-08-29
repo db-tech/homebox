@@ -107,9 +107,35 @@ kept as short as possible:
 3. Scan every single package, including duplicates.
 
 A code the pantry already knows is counted up on the spot, with no interaction
-at all. A code it does not know opens a single name field right there — type the
-name, press Enter, and the camera is ready for the next one. Homebox does not
-jump to the new item, because that would break the rhythm.
+at all. A code it does not know opens a small form right there — name, best
+before date, minimum stock — and Enter creates the item and hands the camera
+back. Homebox does not jump to the new item, because that would break the
+rhythm.
+
+The minimum stock stays filled in between items, since a box of tins usually
+wants the same one. The date does not, because it differs per product.
+
+### Typing a best-before date quickly
+
+Packaging prints dates like `03.2027` or `MHD 03/27`. The date field takes them
+as they are, so you can type four digits and move on:
+
+| You type | Homebox stores |
+| --- | --- |
+| `0327` | 31.03.2027 |
+| `032027` | 31.03.2027 |
+| `03.27` or `03/2027` | 31.03.2027 |
+| `12.03.2027` | 12.03.2027 |
+| `12032027` | 12.03.2027 |
+| `2027-03-12` | 12.03.2027 |
+
+A month without a day resolves to the **last day of that month**, which is what
+"mindestens haltbar bis Ende März" means. The field shows how it read your input
+before you commit, and refuses to save anything it could not parse — a wrong
+best-before date is worse than none.
+
+The `+6 M`, `+1 J` and `+2 J` buttons fill in a rough date for things where the
+packaging has none.
 
 Scan six identical tins and you type once: the first creates the item, the other
 five each add one to it. You never enter a quantity by hand.

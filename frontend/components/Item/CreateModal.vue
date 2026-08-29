@@ -23,6 +23,39 @@
         {{ $t("items.barcode") }}: <span class="badge badge-ghost">{{ props.barcode }}</span>
       </p>
 
+      <div class="mt-2">
+        <button type="button" class="btn btn-ghost btn-xs" @click="showPantry = !showPantry">
+          {{ showPantry ? "&minus;" : "+" }} {{ $t("items.pantry_details") }}
+        </button>
+        <div v-if="showPantry" class="mt-2 flex flex-wrap gap-2">
+          <div class="min-w-40 grow">
+            <input
+              v-model="form.expiry"
+              type="text"
+              inputmode="numeric"
+              class="input input-bordered w-full"
+              :class="expiryLooksWrong ? 'input-error' : ''"
+              :placeholder="$t('pantry.scan.expiry_placeholder')"
+            />
+            <p v-if="expiryLooksWrong" class="mt-1 text-xs text-error">
+              {{ $t("pantry.scan.expiry_unreadable") }}
+            </p>
+            <p v-else-if="parsedExpiry" class="mt-1 text-xs">
+              {{ $t("pantry.scan.expiry_reads_as", { date: formatShortDate(parsedExpiry) }) }}
+            </p>
+          </div>
+          <div class="w-28">
+            <input
+              v-model.number="form.minStock"
+              type="number"
+              min="0"
+              class="input input-bordered w-full"
+              :placeholder="$t('items.min_stock')"
+            />
+          </div>
+        </div>
+      </div>
+
       <div class="modal-action mb-6">
         <div>
           <label for="photo" class="btn">{{ $t("components.item.create_modal.photo_button") }}</label>
@@ -76,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from "vue-i18n";
   import type { ItemCreate, LabelOut, LocationOut } from "~~/lib/api/types/data-contracts";
   import type { PhotoPreview } from "~~/lib/api/types/non-generated";
   import { useLabelStore } from "~~/stores/labels";
@@ -84,6 +118,7 @@
   import MdiPackageVariantClosed from "~icons/mdi/package-variant-closed";
   import MdiChevronDown from "~icons/mdi/chevron-down";
   import { AttachmentTypes } from "~~/lib/api/types/non-generated";
+  import { formatShortDate, parseShortDate } from "~~/lib/datelib/shortdate";
 
   const props = defineProps({
     modelValue: {
@@ -100,6 +135,7 @@
 
   const api = useUserApi();
   const toast = useNotifier();
+  const { t } = useI18n();
 
   const locationsStore = useLocationStore();
   const locations = computed(() => locationsStore.allLocations);
@@ -135,7 +171,15 @@
     color: "", // Future!
     labels: [] as LabelOut[],
     photos: [] as PhotoPreview[],
+    // Pantry, collapsed by default so the dialog stays short for anything that
+    // is not a consumable.
+    expiry: "",
+    minStock: null as number | null,
   });
+
+  const showPantry = ref(false);
+  const parsedExpiry = computed(() => parseShortDate(form.expiry));
+  const expiryLooksWrong = computed(() => form.expiry.trim() !== "" && parsedExpiry.value === null);
 
   const { shift } = useMagicKeys();
 
@@ -189,6 +233,12 @@
       return;
     }
 
+    // Storing a date we could not read would be worse than storing none.
+    if (expiryLooksWrong.value) {
+      toast.error(t("pantry.scan.expiry_unreadable"));
+      return;
+    }
+
     loading.value = true;
 
     if (shift.value) {
@@ -202,6 +252,8 @@
       locationId: form.location.id as string,
       labelIds: form.labels.map(l => l.id) as string[],
       barcode: props.barcode,
+      expiryDate: parsedExpiry.value ?? "",
+      minStock: form.minStock ?? 0,
     };
 
     const { error, data } = await api.items.create(out);
@@ -233,6 +285,7 @@
     form.description = "";
     form.color = "";
     form.photos = [];
+    form.expiry = "";
     focused.value = false;
     loading.value = false;
 

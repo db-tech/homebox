@@ -160,6 +160,12 @@ definitions:
       description:
         maxLength: 1000
         type: string
+      expiryDate:
+        description: |-
+          The pantry numbers are settable on create for the same reason: when
+          unpacking a shopping bag, going back into the edit form for every
+          tin is the slowest part of the job.
+        type: string
       labelIds:
         items:
           type: string
@@ -167,6 +173,8 @@ definitions:
       locationId:
         description: Edges
         type: string
+      minStock:
+        type: integer
       name:
         maxLength: 255
         minLength: 1

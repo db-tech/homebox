@@ -161,3 +161,50 @@ func TestItemsRepository_PantryQueriesAreGroupScoped(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, byBarcode)
 }
+
+// Creating with the pantry fields set is what the scanner does when a tin is
+// unpacked, so the values must survive the create without an extra update.
+func TestItemsRepository_CreateWithPantryFields(t *testing.T) {
+	location, err := tRepos.Locations.Create(context.Background(), tGroup.ID, locationFactory())
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Locations.delete(context.Background(), location.ID) })
+
+	expiry := time.Now().AddDate(0, 0, 20)
+
+	created, err := tRepos.Items.Create(context.Background(), tGroup.ID, ItemCreate{
+		Name:       "Dosentomaten",
+		LocationID: location.ID,
+		Barcode:    "4001234567890",
+		MinStock:   4,
+		ExpiryDate: types.DateFromTime(expiry),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Items.Delete(context.Background(), created.ID) })
+
+	assert.Equal(t, "4001234567890", created.Barcode)
+	assert.Equal(t, 4, created.MinStock)
+	assert.Equal(t, expiry.Format("2006-01-02"), created.ExpiryDate.Time().Format("2006-01-02"))
+
+	// And it must be picked up by the views straight away.
+	expiring, err := tRepos.Items.QueryExpiring(context.Background(), tGroup.ID, 30)
+	require.NoError(t, err)
+	assert.True(t, containsItem(expiring, created.ID))
+}
+
+// An item created without an expiry date must not look like it expired long ago.
+func TestItemsRepository_CreateWithoutExpiryStaysOutOfTheWarningList(t *testing.T) {
+	location, err := tRepos.Locations.Create(context.Background(), tGroup.ID, locationFactory())
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Locations.delete(context.Background(), location.ID) })
+
+	created, err := tRepos.Items.Create(context.Background(), tGroup.ID, ItemCreate{
+		Name:       "Schraubenzieher",
+		LocationID: location.ID,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Items.Delete(context.Background(), created.ID) })
+
+	expiring, err := tRepos.Items.QueryExpiring(context.Background(), tGroup.ID, 3650)
+	require.NoError(t, err)
+	assert.False(t, containsItem(expiring, created.ID))
+}

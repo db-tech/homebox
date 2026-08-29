@@ -113,9 +113,16 @@ export interface ItemCreate {
   barcode: string;
   /** @maxLength 1000 */
   description: string;
+  /**
+   * The pantry numbers are settable on create for the same reason: when
+   * unpacking a shopping bag, going back into the edit form for every
+   * tin is the slowest part of the job.
+   */
+  expiryDate: Date | string;
   labelIds: string[];
   /** Edges */
   locationId: string;
+  minStock: number;
   /**
    * @minLength 1
    * @maxLength 255

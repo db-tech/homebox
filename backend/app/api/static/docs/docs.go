@@ -2750,6 +2750,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 1000
                 },
+                "expiryDate": {
+                    "description": "The pantry numbers are settable on create for the same reason: when\nunpacking a shopping bag, going back into the edit form for every\ntin is the slowest part of the job.",
+                    "type": "string"
+                },
                 "labelIds": {
                     "type": "array",
                     "items": {
@@ -2759,6 +2763,9 @@ const docTemplate = `{
                 "locationId": {
                     "description": "Edges",
                     "type": "string"
+                },
+                "minStock": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string",

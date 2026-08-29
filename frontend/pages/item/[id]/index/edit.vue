@@ -67,6 +67,8 @@
       parentId: item.value.parent?.id,
       labelIds: item.value.labels.map(l => l.id),
       barcode: item.value.barcode,
+      expiryDate: item.value.expiryDate,
+      minStock: item.value.minStock,
     });
 
     if (error) {

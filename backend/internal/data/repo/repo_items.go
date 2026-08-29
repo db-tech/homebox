@@ -67,6 +67,12 @@ type (
 		// registered without a second trip through the edit form.
 		Barcode string `json:"barcode" validate:"max=255"`
 
+		// The pantry numbers are settable on create for the same reason: when
+		// unpacking a shopping bag, going back into the edit form for every
+		// tin is the slowest part of the job.
+		ExpiryDate types.Date `json:"expiryDate"`
+		MinStock   int        `json:"minStock"`
+
 		// Edges
 		LocationID uuid.UUID   `json:"locationId"`
 		LabelIDs   []uuid.UUID `json:"labelIds"`
@@ -596,7 +602,14 @@ func (e *ItemsRepository) Create(ctx context.Context, gid uuid.UUID, data ItemCr
 		SetGroupID(gid).
 		SetLocationID(data.LocationID).
 		SetAssetID(int(data.AssetID)).
-		SetBarcode(data.Barcode)
+		SetBarcode(data.Barcode).
+		SetMinStock(data.MinStock)
+
+	// Same as in UpdateByGroup: an unset expiry date must be NULL, not the zero
+	// time, or the item shows up as long expired.
+	if expiry := data.ExpiryDate.Time(); !expiry.IsZero() {
+		q.SetExpiryDate(expiry)
+	}
 
 	if len(data.LabelIDs) > 0 {
 		q.AddLabelIDs(data.LabelIDs...)

@@ -36,6 +36,8 @@ describe("pantry endpoints", () => {
       description: "pantry test item",
       locationId: location.id,
       barcode: "",
+      expiryDate: "",
+      minStock: 0,
     });
     expect(response.status).toBe(201);
     increment++;
