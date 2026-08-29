@@ -19,6 +19,10 @@
       />
       <FormMultiselect v-model="form.labels" :label="$t('global.labels')" :items="labels ?? []" />
 
+      <p v-if="props.barcode" class="mt-2 text-sm">
+        {{ $t("items.barcode") }}: <span class="badge badge-ghost">{{ props.barcode }}</span>
+      </p>
+
       <div class="modal-action mb-6">
         <div>
           <label for="photo" class="btn">{{ $t("components.item.create_modal.photo_button") }}</label>
@@ -72,7 +76,8 @@
 </template>
 
 <script setup lang="ts">
-  import type { ItemCreate, LabelOut, LocationOut, PhotoPreview } from "~~/lib/api/types/data-contracts";
+  import type { ItemCreate, LabelOut, LocationOut } from "~~/lib/api/types/data-contracts";
+  import type { PhotoPreview } from "~~/lib/api/types/non-generated";
   import { useLabelStore } from "~~/stores/labels";
   import { useLocationStore } from "~~/stores/locations";
   import MdiPackageVariant from "~icons/mdi/package-variant";
@@ -84,6 +89,12 @@
     modelValue: {
       type: Boolean,
       required: true,
+    },
+    // Preset when the item is being created straight off a barcode scan, so
+    // the code is registered without a second trip through the edit form.
+    barcode: {
+      type: String,
+      default: "",
     },
   });
 
@@ -190,6 +201,7 @@
       description: form.description,
       locationId: form.location.id as string,
       labelIds: form.labels.map(l => l.id) as string[],
+      barcode: props.barcode,
     };
 
     const { error, data } = await api.items.create(out);

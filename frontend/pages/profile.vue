@@ -527,10 +527,10 @@
           </BaseSectionHeader>
         </template>
         <div class="border-t-2 border-gray-300 p-4 px-6">
-          <p class="mb-4">As an administrator, you have access to additional tools to manage users and system settings.</p>
-          <BaseButton size="sm" class="btn-primary" @click="navigateTo('/admin')">
-            Go to Admin Panel
-          </BaseButton>
+          <p class="mb-4">
+            As an administrator, you have access to additional tools to manage users and system settings.
+          </p>
+          <BaseButton size="sm" class="btn-primary" @click="navigateTo('/admin')"> Go to Admin Panel </BaseButton>
         </div>
       </BaseCard>
 
