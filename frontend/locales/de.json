@@ -364,6 +364,7 @@
         },
         "scan": {
             "added_one": "Ein {name} hinzugefügt",
+            "capture_size": "Kamera: {size}",
             "continue_scanning": "Weiterscannen",
             "create_and_continue": "Anlegen und weiterscannen",
             "create_failed": "Eintrag konnte nicht angelegt werden",
@@ -375,6 +376,8 @@
             "expiry_reads_as": "Wird gelesen als {date}",
             "expiry_unreadable": "Datum nicht lesbar - versuch 0327, 03.2027 oder 12.03.2027",
             "hint": "Kamera auf den Barcode des Produkts halten.",
+            "manual_placeholder": "Oder Barcode-Ziffern eintippen",
+            "manual_submit": "Suchen",
             "mode": "Nach dem Scannen",
             "mode_ask": "Nachfragen",
             "mode_consume": "Eins entnehmen",
@@ -388,6 +391,8 @@
             "several_matches": "{n} Einträge haben diesen Barcode",
             "skip": "Überspringen",
             "suggested_by_openfoodfacts": "Vorschlag von OpenFoodFacts - einfach überschreiben wenn es nicht passt",
+            "tips": "Barcode formatfüllend ins Bild halten, waagerecht, etwa eine Handbreit entfernt. Gutes Licht hilft mehr als näher rangehen.",
+            "tips_title": "Wird nichts erkannt?",
             "title": "Barcode scannen",
             "took_one": "Ein {name} entnommen"
         },

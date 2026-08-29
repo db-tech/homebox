@@ -364,6 +364,7 @@
         },
         "scan": {
             "added_one": "Added one {name} to stock",
+            "capture_size": "Camera: {size}",
             "continue_scanning": "Keep scanning",
             "create_and_continue": "Create and keep scanning",
             "create_failed": "Could not create the item",
@@ -375,6 +376,8 @@
             "expiry_reads_as": "Reads as {date}",
             "expiry_unreadable": "Could not read that date - try 0327, 03.2027 or 12.03.2027",
             "hint": "Point the camera at a product barcode.",
+            "manual_placeholder": "Or type the barcode digits",
+            "manual_submit": "Look up",
             "mode": "After scanning",
             "mode_ask": "Ask me",
             "mode_consume": "Take one out",
@@ -388,6 +391,8 @@
             "several_matches": "{n} items share this barcode",
             "skip": "Skip",
             "suggested_by_openfoodfacts": "Suggested from OpenFoodFacts - correct it if it is off",
+            "tips": "Fill the frame with the barcode, hold it horizontal, and keep it about a hand's width away. Good light helps more than getting closer.",
+            "tips_title": "Not reading?",
             "title": "Scan Barcode",
             "took_one": "Took one {name} out of stock"
         },

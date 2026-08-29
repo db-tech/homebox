@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
+  import { BarcodeFormat, BrowserMultiFormatReader, DecodeHintType, NotFoundException } from "@zxing/library";
   import { useI18n } from "vue-i18n";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
@@ -23,8 +23,30 @@
   const selectedSource = ref<string | null>(null);
   const busy = ref(false);
   const video = ref<HTMLVideoElement>();
-  const codeReader = new BrowserMultiFormatReader();
+  // Restricted to the formats that actually occur here: the 1D codes on
+  // packaging plus QR for Homebox's own labels. Fewer formats means each frame
+  // is cheaper, so more frames get tried per second.
+  const hints = new Map();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.UPC_A,
+    BarcodeFormat.UPC_E,
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.ITF,
+    BarcodeFormat.QR_CODE,
+  ]);
+  hints.set(DecodeHintType.TRY_HARDER, true);
+
+  // The default is 500ms, which is only two attempts per second - far too slow
+  // to catch a hand-held barcode drifting through focus.
+  const codeReader = new BrowserMultiFormatReader(hints, 150);
   const errorMessage = ref<string | null>(null);
+
+  /** Negotiated capture size, shown so a too-small stream is visible, not silent. */
+  const captureSize = ref<string | null>(null);
+  const manualCode = ref("");
 
   /** What to do automatically once a barcode resolves to exactly one item. */
   type ScanMode = "ask" | "consume" | "restock";
@@ -206,6 +228,17 @@
     busy.value = false;
   }
 
+  /**
+   * Typing the digits goes through exactly the same path as a camera read, so a
+   * damaged or unreadable code never blocks the work.
+   */
+  async function submitManual() {
+    const code = manualCode.value.trim();
+    if (!code) return;
+    manualCode.value = "";
+    await handleScan(code);
+  }
+
   async function handleScan(text: string) {
     const path = asInternalPath(text);
     if (path) {
@@ -225,17 +258,19 @@
       const devices = await codeReader.listVideoInputDevices();
       sources.value = devices;
 
-      if (devices.length > 0) {
-        for (let i = 0; i < devices.length; i++) {
-          if (devices[i].label.toLowerCase().includes("back")) {
-            selectedSource.value = devices[i].deviceId;
-          }
-        }
-        if (!selectedSource.value) {
-          selectedSource.value = devices[0].deviceId;
-        }
-      } else {
+      if (devices.length === 0) {
         errorMessage.value = t("scanner.no_sources");
+        return;
+      }
+
+      // Only pick a device when its label positively identifies a rear camera.
+      // enumerateDevices returns empty labels until camera permission has been
+      // granted, and blindly taking the first entry then selects the front
+      // camera on most phones. Leaving this null keeps the stream on
+      // facingMode: environment, which the browser resolves correctly.
+      const rear = devices.find(d => /back|rear|environment|rück/i.test(d.label));
+      if (rear) {
+        selectedSource.value = rear.deviceId;
       }
     } catch (err) {
       handleError(err);
@@ -244,34 +279,57 @@
 
   onBeforeUnmount(() => codeReader.reset());
 
-  watch(selectedSource, async newSource => {
-    codeReader.reset();
+  watch(
+    selectedSource,
+    async newSource => {
+      codeReader.reset();
+      captureSize.value = null;
 
-    try {
-      await codeReader.decodeFromVideoDevice(newSource, video.value!, (result, err) => {
-        // While a result is on screen the camera keeps running but is ignored,
-        // so typing a name is not interrupted by the next frame.
-        if (result && !busy.value && !scannedCode.value) {
-          busy.value = true;
-          errorMessage.value = null;
+      // decodeFromVideoDevice asks for a camera and nothing else, so the browser
+      // hands back whatever it likes - often 640x480. An EAN-13 needs roughly 250
+      // pixels of width in the captured frame to decode at all, which that does
+      // not give unless the can is almost touching the lens. Asking for a high
+      // resolution stream is what makes scanning work at a normal distance.
+      const constraints: MediaStreamConstraints = {
+        video: {
+          ...(newSource ? { deviceId: { exact: newSource } } : { facingMode: { ideal: "environment" } }),
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+      };
 
-          handleScan(result.getText())
-            .catch(handleError)
-            .finally(() => {
-              setTimeout(() => {
-                busy.value = false;
-              }, 800);
-            });
-        }
-        if (err && !(err instanceof NotFoundException)) {
-          console.error(err);
-          handleError(err);
-        }
-      });
-    } catch (err) {
-      handleError(err);
-    }
-  });
+      try {
+        await codeReader.decodeFromConstraints(constraints, video.value!, (result, err) => {
+          if (!captureSize.value && video.value?.videoWidth) {
+            captureSize.value = `${video.value.videoWidth}\u00D7${video.value.videoHeight}`;
+          }
+          // While a result is on screen the camera keeps running but is ignored,
+          // so typing a name is not interrupted by the next frame.
+          if (result && !busy.value && !scannedCode.value) {
+            busy.value = true;
+            errorMessage.value = null;
+
+            handleScan(result.getText())
+              .catch(handleError)
+              .finally(() => {
+                setTimeout(() => {
+                  busy.value = false;
+                }, 800);
+              });
+          }
+          if (err && !(err instanceof NotFoundException)) {
+            console.error(err);
+            handleError(err);
+          }
+        });
+      } catch (err) {
+        handleError(err);
+      }
+    },
+    // Runs on mount as well, so the camera starts on facingMode: environment
+    // before the device list has resolved.
+    { immediate: true }
+  );
 </script>
 
 <template>
@@ -299,13 +357,34 @@
           <!-- Set once, stays for the whole session -->
           <div class="mb-4">
             <LocationSelector v-model="location" />
-            <p v-if="!location" class="text-xs text-warning">{{ $t("pantry.scan.pick_location_first") }}</p>
+            <p v-if="!location" class="text-xs text-warning">
+              {{ $t("pantry.scan.pick_location_first") }}
+            </p>
           </div>
 
           <video ref="video" class="rounded-box shadow-lg" poster="data:image/gif,AAAA"></video>
 
+          <p v-if="captureSize" class="mt-1 text-right text-xs opacity-60">
+            {{ $t("pantry.scan.capture_size", { size: captureSize }) }}
+          </p>
+
+          <form class="mt-3 flex gap-2" @submit.prevent="submitManual">
+            <input
+              v-model="manualCode"
+              type="text"
+              inputmode="numeric"
+              class="input input-bordered grow"
+              :placeholder="$t('pantry.scan.manual_placeholder')"
+            />
+            <BaseButton type="submit" size="sm" :disabled="!manualCode.trim()">
+              {{ $t("pantry.scan.manual_submit") }}
+            </BaseButton>
+          </form>
+
           <select v-model="selectedSource" class="select mt-4 w-full shadow-lg">
-            <option disabled selected :value="null">{{ t("scanner.select_video_source") }}</option>
+            <option disabled selected :value="null">
+              {{ t("scanner.select_video_source") }}
+            </option>
             <option v-for="source in sources" :key="source.deviceId" :value="source.deviceId">
               {{ source.label }}
             </option>
@@ -338,12 +417,21 @@
 
           <p class="mt-2 text-xs">{{ $t("pantry.scan.hint") }}</p>
 
+          <details class="mt-2 text-xs">
+            <summary class="cursor-pointer">
+              {{ $t("pantry.scan.tips_title") }}
+            </summary>
+            <p class="mt-1 opacity-80">{{ $t("pantry.scan.tips") }}</p>
+          </details>
+
           <BaseCard v-if="scannedCode" class="mt-6">
             <template #title>{{ $t("pantry.scan.title") }}</template>
             <template #subtitle>{{ scannedCode }}</template>
 
             <div class="border-t border-gray-300 p-4">
-              <p v-if="searching" class="text-sm">{{ $t("pantry.scan.searching", { code: scannedCode }) }}</p>
+              <p v-if="searching" class="text-sm">
+                {{ $t("pantry.scan.searching", { code: scannedCode }) }}
+              </p>
 
               <!-- Unknown code: name it and carry on -->
               <form v-else-if="showNewItemForm" class="flex flex-col gap-3" @submit.prevent="createFromScan">
@@ -351,7 +439,9 @@
                   {{ $t("pantry.scan.suggested_by_openfoodfacts") }}
                   <span v-if="suggestion.amount"> &middot; {{ suggestion.amount }}</span>
                 </p>
-                <p v-else class="text-sm">{{ $t("pantry.scan.no_match", { code: scannedCode }) }}</p>
+                <p v-else class="text-sm">
+                  {{ $t("pantry.scan.no_match", { code: scannedCode }) }}
+                </p>
 
                 <input
                   ref="nameInput"
@@ -376,7 +466,11 @@
                       {{ $t("pantry.scan.expiry_unreadable") }}
                     </p>
                     <p v-else-if="parsedExpiry" class="mt-1 text-xs">
-                      {{ $t("pantry.scan.expiry_reads_as", { date: formatShortDate(parsedExpiry) }) }}
+                      {{
+                        $t("pantry.scan.expiry_reads_as", {
+                          date: formatShortDate(parsedExpiry),
+                        })
+                      }}
                     </p>
                   </div>
                   <div class="w-28">
