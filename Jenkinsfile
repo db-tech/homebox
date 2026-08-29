@@ -32,6 +32,12 @@
 //   - Jenkins file credential 'homebox_env' holding the runtime env
 //     (HBOX_ADMIN_*, HBOX_OPTIONS_*, ...). Same shape as stoa_env.
 //
+// Source: ssh://git@git.dbiber.de:2222/admin/homebox.git
+// The multibranch job needs no git credential for that URL. Jenkins runs as a
+// container that carries its own SSH key, which Gitea accepts, and git.dbiber.de
+// is already in its known_hosts. The credentialsId on the stoa job is a
+// username/password PAT and is not actually used for an ssh:// remote.
+//
 // Trigger: Multibranch job config "Periodically if not otherwise run".
 
 pipeline {
