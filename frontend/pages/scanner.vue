@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
   import { useI18n } from "vue-i18n";
-  import type { ItemSummary } from "~~/lib/api/types/data-contracts";
+  import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
   import MdiMinus from "~icons/mdi/minus";
   import MdiPlus from "~icons/mdi/plus";
@@ -20,19 +20,28 @@
 
   const sources = ref<MediaDeviceInfo[]>([]);
   const selectedSource = ref<string | null>(null);
-  const loading = ref(false);
+  const busy = ref(false);
   const video = ref<HTMLVideoElement>();
   const codeReader = new BrowserMultiFormatReader();
   const errorMessage = ref<string | null>(null);
 
   /** What to do automatically once a barcode resolves to exactly one item. */
   type ScanMode = "ask" | "consume" | "restock";
-  const scanMode = ref<ScanMode>("ask");
+  const scanMode = ref<ScanMode>("restock");
 
   const scannedCode = ref<string | null>(null);
-  const createModal = ref(false);
   const matches = ref<ItemSummary[]>([]);
+  const suggestion = ref<ProductlookupProduct | null>(null);
   const searching = ref(false);
+
+  // Unpacking a box means everything lands in the same place, so the location
+  // is picked once and then stays put for the whole session.
+  const location = ref<LocationOut | null>(null);
+  const newName = ref("");
+  const nameInput = ref<HTMLInputElement | null>(null);
+  const creating = ref(false);
+
+  const showNewItemForm = computed(() => !!scannedCode.value && !searching.value && matches.value.length === 0);
 
   const handleError = (error: unknown) => {
     console.error("Scanner error:", error);
@@ -50,33 +59,47 @@
     } catch {
       return null;
     }
-
     if (!url.pathname.startsWith("/")) {
       return null;
     }
-
     return url.pathname.replace(/[^a-zA-Z0-9-_/]/g, "");
   }
 
   async function lookupBarcode(code: string) {
     scannedCode.value = code;
     matches.value = [];
+    suggestion.value = null;
+    newName.value = "";
     searching.value = true;
 
-    const { data, error } = await api.pantry.byBarcode(code);
+    const { data, error } = await api.pantry.scan(code);
     searching.value = false;
 
-    if (error) {
+    if (error || !data) {
       handleError(error);
       return;
     }
 
-    matches.value = data ?? [];
+    matches.value = data.items ?? [];
+    suggestion.value = data.suggestion ?? null;
 
-    // With a single match and an automatic mode there is nothing to decide.
     if (matches.value.length === 1 && scanMode.value !== "ask") {
       await record(matches.value[0], scanMode.value);
+      return;
     }
+
+    if (matches.value.length === 0) {
+      // Straight into typing: the suggestion is a starting point, not a verdict.
+      newName.value = buildSuggestedName(data.suggestion);
+      await nextTick();
+      nameInput.value?.focus();
+    }
+  }
+
+  /** Combines brand and product name the way a shelf label would read. */
+  function buildSuggestedName(p?: ProductlookupProduct | null): string {
+    if (!p?.found) return "";
+    return [p.brand, p.name].filter(Boolean).join(" ").trim();
   }
 
   async function record(item: ItemSummary, kind: ConsumptionType) {
@@ -107,8 +130,51 @@
         : t("pantry.scan.added_one", { name: item.name })
     );
 
-    // Keep the displayed stock honest without a full refetch.
     item.quantity += kind === "consume" ? -1 : 1;
+  }
+
+  /**
+   * Creates the item and goes straight back to scanning. Deliberately does not
+   * navigate to the new item: the point is to keep the camera on the next can.
+   */
+  async function createFromScan() {
+    if (!scannedCode.value || creating.value) {
+      return;
+    }
+    if (!location.value) {
+      toast.error(t("pantry.scan.pick_location_first"));
+      return;
+    }
+    if (!newName.value.trim()) {
+      return;
+    }
+
+    creating.value = true;
+    const { data, error } = await api.items.create({
+      parentId: null,
+      name: newName.value.trim(),
+      description: "",
+      locationId: location.value.id,
+      labelIds: [],
+      barcode: scannedCode.value,
+    });
+    creating.value = false;
+
+    if (error || !data) {
+      toast.error(t("pantry.scan.create_failed"));
+      return;
+    }
+
+    toast.success(t("pantry.scan.created", { name: data.name }));
+    dismiss();
+  }
+
+  function dismiss() {
+    scannedCode.value = null;
+    matches.value = [];
+    suggestion.value = null;
+    newName.value = "";
+    busy.value = false;
   }
 
   async function handleScan(text: string) {
@@ -117,14 +183,7 @@
       navigateTo(path);
       return;
     }
-
     await lookupBarcode(text);
-  }
-
-  function dismiss() {
-    scannedCode.value = null;
-    matches.value = [];
-    loading.value = false;
   }
 
   onMounted(async () => {
@@ -154,7 +213,6 @@
     }
   });
 
-  // stop the code reader when navigating away
   onBeforeUnmount(() => codeReader.reset());
 
   watch(selectedSource, async newSource => {
@@ -162,18 +220,18 @@
 
     try {
       await codeReader.decodeFromVideoDevice(newSource, video.value!, (result, err) => {
-        if (result && !loading.value) {
-          loading.value = true;
+        // While a result is on screen the camera keeps running but is ignored,
+        // so typing a name is not interrupted by the next frame.
+        if (result && !busy.value && !scannedCode.value) {
+          busy.value = true;
           errorMessage.value = null;
 
           handleScan(result.getText())
             .catch(handleError)
             .finally(() => {
-              // Release the lock so the next product can be scanned, but only
-              // after a beat so one barcode is not read several times over.
               setTimeout(() => {
-                loading.value = false;
-              }, 1200);
+                busy.value = false;
+              }, 800);
             });
         }
         if (err && !(err instanceof NotFoundException)) {
@@ -189,7 +247,6 @@
 
 <template>
   <div class="flex flex-col gap-12 pb-16">
-    <ItemCreateModal v-model="createModal" :barcode="scannedCode ?? ''" />
     <section>
       <div class="mx-auto">
         <div class="max-w-screen-md">
@@ -210,6 +267,12 @@
             <span class="text-sm">{{ errorMessage }}</span>
           </div>
 
+          <!-- Set once, stays for the whole session -->
+          <div class="mb-4">
+            <LocationSelector v-model="location" />
+            <p v-if="!location" class="text-xs text-warning">{{ $t("pantry.scan.pick_location_first") }}</p>
+          </div>
+
           <video ref="video" class="rounded-box shadow-lg" poster="data:image/gif,AAAA"></video>
 
           <select v-model="selectedSource" class="select mt-4 w-full shadow-lg">
@@ -223,10 +286,10 @@
             <span class="text-sm">{{ $t("pantry.scan.mode") }}:</span>
             <button
               class="btn btn-xs"
-              :class="scanMode === 'ask' ? 'btn-primary' : 'btn-ghost'"
-              @click="scanMode = 'ask'"
+              :class="scanMode === 'restock' ? 'btn-primary' : 'btn-ghost'"
+              @click="scanMode = 'restock'"
             >
-              {{ $t("pantry.scan.mode_ask") }}
+              {{ $t("pantry.scan.mode_restock") }}
             </button>
             <button
               class="btn btn-xs"
@@ -237,16 +300,15 @@
             </button>
             <button
               class="btn btn-xs"
-              :class="scanMode === 'restock' ? 'btn-primary' : 'btn-ghost'"
-              @click="scanMode = 'restock'"
+              :class="scanMode === 'ask' ? 'btn-primary' : 'btn-ghost'"
+              @click="scanMode = 'ask'"
             >
-              {{ $t("pantry.scan.mode_restock") }}
+              {{ $t("pantry.scan.mode_ask") }}
             </button>
           </div>
 
           <p class="mt-2 text-xs">{{ $t("pantry.scan.hint") }}</p>
 
-          <!-- Scan result -->
           <BaseCard v-if="scannedCode" class="mt-6">
             <template #title>{{ $t("pantry.scan.title") }}</template>
             <template #subtitle>{{ scannedCode }}</template>
@@ -254,15 +316,34 @@
             <div class="border-t border-gray-300 p-4">
               <p v-if="searching" class="text-sm">{{ $t("pantry.scan.searching", { code: scannedCode }) }}</p>
 
-              <div v-else-if="matches.length === 0" class="flex flex-col gap-3">
-                <p class="text-sm">{{ $t("pantry.scan.no_match", { code: scannedCode }) }}</p>
-                <div>
-                  <BaseButton size="sm" @click="createModal = true">
-                    {{ $t("pantry.scan.create_with_barcode") }}
+              <!-- Unknown code: name it and carry on -->
+              <form v-else-if="showNewItemForm" class="flex flex-col gap-3" @submit.prevent="createFromScan">
+                <p v-if="suggestion?.found" class="text-xs">
+                  {{ $t("pantry.scan.suggested_by_openfoodfacts") }}
+                  <span v-if="suggestion.amount"> &middot; {{ suggestion.amount }}</span>
+                </p>
+                <p v-else class="text-sm">{{ $t("pantry.scan.no_match", { code: scannedCode }) }}</p>
+
+                <input
+                  ref="nameInput"
+                  v-model="newName"
+                  type="text"
+                  class="input input-bordered w-full"
+                  :placeholder="$t('pantry.scan.name_placeholder')"
+                  maxlength="255"
+                />
+
+                <div class="flex flex-wrap justify-end gap-2">
+                  <BaseButton type="button" class="btn-ghost" size="sm" @click="dismiss">
+                    {{ $t("pantry.scan.skip") }}
+                  </BaseButton>
+                  <BaseButton type="submit" size="sm" :disabled="creating || !newName.trim() || !location">
+                    {{ $t("pantry.scan.create_and_continue") }}
                   </BaseButton>
                 </div>
-              </div>
+              </form>
 
+              <!-- Known code -->
               <div v-else class="flex flex-col gap-3">
                 <p v-if="matches.length > 1" class="text-sm">
                   {{ $t("pantry.scan.several_matches", { n: matches.length }) }}
@@ -291,10 +372,10 @@
                     <MdiOpenInNew />
                   </NuxtLink>
                 </div>
-              </div>
 
-              <div class="mt-4 flex justify-end">
-                <BaseButton size="sm" @click="dismiss">{{ $t("global.confirm") }}</BaseButton>
+                <div class="flex justify-end">
+                  <BaseButton size="sm" @click="dismiss">{{ $t("pantry.scan.continue_scanning") }}</BaseButton>
+                </div>
               </div>
             </div>
           </BaseCard>

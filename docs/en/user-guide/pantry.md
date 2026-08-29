@@ -96,11 +96,47 @@ With several matches, or with none, you are always asked. The automatic modes
 are for working through a shopping bag or a shelf without touching the screen
 between items.
 
-### Registering a new barcode
+### Filling a pantry from scratch
 
-Scan a code Homebox does not know and it offers **Create new item with this
-barcode**. The item is created with the code already attached, so the next scan
-of the same product finds it.
+The scanner is built around unpacking a shopping bag or a box, so the loop is
+kept as short as possible:
 
-The same product in two places is fine — barcodes are not required to be unique,
-and a scan that matches several items simply lists them all.
+1. Pick the **location** once at the top of the page. It stays set for the whole
+   session.
+2. Leave **After scanning** on *Add one*.
+3. Scan every single package, including duplicates.
+
+A code the pantry already knows is counted up on the spot, with no interaction
+at all. A code it does not know opens a single name field right there — type the
+name, press Enter, and the camera is ready for the next one. Homebox does not
+jump to the new item, because that would break the rhythm.
+
+Scan six identical tins and you type once: the first creates the item, the other
+five each add one to it. You never enter a quantity by hand.
+
+### Product name suggestions
+
+When a scanned code is unknown locally, Homebox can ask
+[OpenFoodFacts](https://world.openfoodfacts.org) what the product is and
+pre-fill the name field, which you then confirm or overwrite.
+
+This is the only place where Homebox talks to a third party, and it is worth
+being precise about what that means:
+
+- Only the barcode digits leave your server. No item names, no quantities, no
+  location, nothing tied to you or your group.
+- It happens only when you scan a code that no local item carries — never in the
+  background, never for codes you already have.
+- Codes that are not plausible EAN/UPC digits are rejected before any request is
+  made, so a stray QR payload cannot be forwarded by accident.
+- If OpenFoodFacts is slow or unreachable the scan still works; you just type the
+  name yourself.
+
+Set `HBOX_OPTIONS_PRODUCT_LOOKUP=false` to switch it off entirely. Every scan
+then stays on your own server.
+
+### Registering a barcode by hand
+
+You can also type a barcode into an item's **Pantry** card in the edit form. The
+same product in two places is fine — barcodes are not required to be unique, and
+a scan that matches several items simply lists them all.
