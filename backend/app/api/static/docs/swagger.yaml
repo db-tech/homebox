@@ -11,6 +11,19 @@ definitions:
       symbol:
         type: string
     type: object
+  productlookup.Product:
+    properties:
+      amount:
+        type: string
+      brand:
+        type: string
+      found:
+        type: boolean
+      name:
+        type: string
+      source:
+        type: string
+    type: object
   repo.ConsumptionCreate:
     properties:
       amount:
@@ -777,6 +790,8 @@ definitions:
         $ref: '#/definitions/services.Latest'
       message:
         type: string
+      productLookup:
+        type: boolean
       title:
         type: string
       versions:
@@ -860,6 +875,23 @@ definitions:
         items:
           $ref: '#/definitions/repo.UserOut'
         type: array
+    type: object
+  v1.ScanResult:
+    properties:
+      barcode:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/repo.ItemSummary'
+        type: array
+      suggestion:
+        allOf:
+        - $ref: '#/definitions/productlookup.Product'
+        description: |-
+          Suggestion is nil unless the barcode is unknown locally and the
+          lookup is enabled and produced something.
+        x-nullable: true
+        x-omitempty: true
     type: object
   v1.TokenResponse:
     properties:
@@ -2199,6 +2231,26 @@ paths:
       security:
       - Bearer: []
       summary: Get items at or below their minimum stock
+      tags:
+      - Pantry
+  /v1/pantry/scan:
+    get:
+      parameters:
+      - description: scanned barcode
+        in: query
+        name: barcode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.ScanResult'
+      security:
+      - Bearer: []
+      summary: Resolve a scanned barcode
       tags:
       - Pantry
   /v1/qrcode:

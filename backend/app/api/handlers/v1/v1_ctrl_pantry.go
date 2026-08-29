@@ -6,7 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hay-kot/httpkit/errchain"
+	"github.com/rs/zerolog/log"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services/productlookup"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"github.com/sysadminsmedia/homebox/backend/internal/web/adapters"
@@ -26,6 +28,17 @@ type (
 	// ConsumptionStatsQuery selects the period the statistics cover.
 	ConsumptionStatsQuery struct {
 		Days int `schema:"days"`
+	}
+
+	// ScanResult is everything the scanner needs after reading a code: the
+	// items that already carry it, and - only when there are none - what a
+	// product database knows about it.
+	ScanResult struct {
+		Barcode string             `json:"barcode"`
+		Items   []repo.ItemSummary `json:"items"`
+		// Suggestion is nil unless the barcode is unknown locally and the
+		// lookup is enabled and produced something.
+		Suggestion *productlookup.Product `json:"suggestion,omitempty" extensions:"x-nullable,x-omitempty"`
 	}
 )
 
@@ -87,6 +100,53 @@ func (ctrl *V1Controller) HandleItemsByBarcode() errchain.HandlerFunc {
 	fn := func(r *http.Request, q BarcodeQuery) ([]repo.ItemSummary, error) {
 		auth := services.NewContext(r.Context())
 		return ctrl.repo.Items.QueryByBarcode(auth, auth.GID, q.Barcode)
+	}
+
+	return adapters.Query(fn, http.StatusOK)
+}
+
+// HandleBarcodeScan godoc
+//
+//	@Summary	Resolve a scanned barcode
+//	@Tags		Pantry
+//	@Produce	json
+//	@Param		barcode	query		string	true	"scanned barcode"
+//	@Success	200		{object}	ScanResult
+//	@Router		/v1/pantry/scan [GET]
+//	@Security	Bearer
+//
+// One round trip for the whole scan: the local items first, and a product
+// database suggestion only when nothing local matches. Keeping it in one call
+// means the scanner does not have to decide when to ask.
+func (ctrl *V1Controller) HandleBarcodeScan() errchain.HandlerFunc {
+	fn := func(r *http.Request, q BarcodeQuery) (ScanResult, error) {
+		auth := services.NewContext(r.Context())
+
+		items, err := ctrl.repo.Items.QueryByBarcode(auth, auth.GID, q.Barcode)
+		if err != nil {
+			return ScanResult{}, err
+		}
+
+		result := ScanResult{Barcode: q.Barcode, Items: items}
+
+		// Nothing goes out while a local item already answers the question.
+		if len(items) > 0 {
+			return result, nil
+		}
+
+		product, err := ctrl.svc.ProductLookup.Lookup(auth, q.Barcode)
+		switch {
+		case errors.Is(err, productlookup.ErrLookupDisabled):
+			// Switched off; the user types the name. Not an error.
+		case err != nil:
+			// The lookup is a convenience. If OpenFoodFacts is slow or down the
+			// scan must still work, so log it and carry on without a suggestion.
+			log.Warn().Err(err).Msg("product lookup failed")
+		case product.Found:
+			result.Suggestion = &product
+		}
+
+		return result, nil
 	}
 
 	return adapters.Query(fn, http.StatusOK)

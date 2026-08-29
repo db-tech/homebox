@@ -2170,6 +2170,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/pantry/scan": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pantry"
+                ],
+                "summary": "Resolve a scanned barcode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "scanned barcode",
+                        "name": "barcode",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ScanResult"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/qrcode": {
             "get": {
                 "security": [
@@ -2493,6 +2526,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "productlookup.Product": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "brand": {
+                    "type": "string"
+                },
+                "found": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 }
             }
@@ -3625,6 +3678,9 @@ const docTemplate = `{
                 "message": {
                     "type": "string"
                 },
+                "productLookup": {
+                    "type": "boolean"
+                },
                 "title": {
                     "type": "string"
                 },
@@ -3751,6 +3807,30 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/repo.UserOut"
                     }
+                }
+            }
+        },
+        "v1.ScanResult": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repo.ItemSummary"
+                    }
+                },
+                "suggestion": {
+                    "description": "Suggestion is nil unless the barcode is unknown locally and the\nlookup is enabled and produced something.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/productlookup.Product"
+                        }
+                    ],
+                    "x-nullable": true,
+                    "x-omitempty": true
                 }
             }
         },

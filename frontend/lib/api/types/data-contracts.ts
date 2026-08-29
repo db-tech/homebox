@@ -17,6 +17,14 @@ export interface CurrenciesCurrency {
   symbol: string;
 }
 
+export interface ProductlookupProduct {
+  amount: string;
+  brand: string;
+  found: boolean;
+  name: string;
+  source: string;
+}
+
 export interface ConsumptionCreate {
   /**
    * Amount is always positive; Type carries the direction.
@@ -473,6 +481,7 @@ export interface APISummary {
   labelPrinting: boolean;
   latest: Latest;
   message: string;
+  productLookup: boolean;
   title: string;
   versions: string[];
 }
@@ -529,6 +538,16 @@ export interface LoginForm {
 
 export interface ResultsRepoUserOut {
   items: UserOut[];
+}
+
+export interface ScanResult {
+  barcode: string;
+  items: ItemSummary[];
+  /**
+   * Suggestion is nil unless the barcode is unknown locally and the
+   * lookup is enabled and produced something.
+   */
+  suggestion?: ProductlookupProduct | null;
 }
 
 export interface TokenResponse {

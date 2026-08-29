@@ -1,5 +1,11 @@
 import { BaseAPI, route } from "../base";
-import type { ConsumptionCreate, ConsumptionEntry, ConsumptionSummary, ItemSummary } from "../types/data-contracts";
+import type {
+  ConsumptionCreate,
+  ConsumptionEntry,
+  ConsumptionSummary,
+  ItemSummary,
+  ScanResult,
+} from "../types/data-contracts";
 
 export type ConsumptionType = "consume" | "restock" | "correction";
 
@@ -19,6 +25,14 @@ export class PantryAPI extends BaseAPI {
   /** Items carrying the given barcode. May return more than one match. */
   byBarcode(barcode: string) {
     return this.http.get<ItemSummary[]>({ url: route("/pantry/barcode", { barcode }) });
+  }
+
+  /**
+   * Everything the scanner needs in one round trip: the local items carrying
+   * the code, plus a product database suggestion when none do.
+   */
+  scan(barcode: string) {
+    return this.http.get<ScanResult>({ url: route("/pantry/scan", { barcode }) });
   }
 
   /** Consumption totals per item over the last `days` days, most consumed first. */

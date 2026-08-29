@@ -148,6 +148,7 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Get("/pantry/expiring", chain.ToHandlerFunc(v1Ctrl.HandleItemsExpiring(), userMW...))
 		r.Get("/pantry/low-stock", chain.ToHandlerFunc(v1Ctrl.HandleItemsLowStock(), userMW...))
 		r.Get("/pantry/barcode", chain.ToHandlerFunc(v1Ctrl.HandleItemsByBarcode(), userMW...))
+		r.Get("/pantry/scan", chain.ToHandlerFunc(v1Ctrl.HandleBarcodeScan(), userMW...))
 		r.Get("/pantry/consumption/statistics", chain.ToHandlerFunc(v1Ctrl.HandleConsumptionStatistics(), userMW...))
 
 		r.Get("/assets/{id}", chain.ToHandlerFunc(v1Ctrl.HandleAssetGet(), userMW...))

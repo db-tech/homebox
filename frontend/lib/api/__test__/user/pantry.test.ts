@@ -119,6 +119,34 @@ describe("pantry endpoints", () => {
     await cleanup();
   });
 
+  // Deliberately uses a non-numeric barcode: the server only forwards plausible
+  // EAN/UPC digits to OpenFoodFacts, so this test can never reach the network.
+  test("scan returns local items and no suggestion when the code is known", async () => {
+    const api = await sharedUserClient();
+    const [location, cleanup] = await useLocation(api);
+
+    const code = `__test__scan${Date.now()}`;
+    const item = await usePantryItem(api, location, { barcode: code, quantity: 3 });
+
+    const { response, data } = await api.pantry.scan(code);
+    expect(response.status).toBe(200);
+    expect(data.barcode).toBe(code);
+    expect(data.items.map(i => i.id)).toEqual([item.id]);
+    expect(data.suggestion).toBeFalsy();
+
+    await api.items.delete(item.id);
+    await cleanup();
+  });
+
+  test("scan on an unknown non-numeric code returns nothing and stays local", async () => {
+    const api = await sharedUserClient();
+
+    const { response, data } = await api.pantry.scan(`__test__unknown${Date.now()}`);
+    expect(response.status).toBe(200);
+    expect(data.items).toHaveLength(0);
+    expect(data.suggestion).toBeFalsy();
+  });
+
   test("recording consumption moves the stock and shows up in the log", async () => {
     const api = await sharedUserClient();
     const [location, cleanup] = await useLocation(api);

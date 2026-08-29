@@ -36,6 +36,11 @@ type Options struct {
 	CurrencyConfig       string `yaml:"currencies"`
 	GithubReleaseCheck   bool   `yaml:"check_github_release"    conf:"default:true"`
 	AllowAnalytics       bool   `yaml:"allow_analytics"         conf:"default:false"`
+	// ProductLookup enables looking a scanned barcode up at OpenFoodFacts when
+	// no local item carries it. Only the barcode digits are sent, and only when
+	// a user actually scans something unknown - never in the background. Set
+	// HBOX_OPTIONS_PRODUCT_LOOKUP=false to keep every scan on this server.
+	ProductLookup bool `yaml:"product_lookup" conf:"default:true"`
 }
 
 type DebugConf struct {
