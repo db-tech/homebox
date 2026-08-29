@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { ServerEvent, onServerEvent } from "~~/composables/use-server-events";
   import type { AnyDetail, Detail, Details } from "~~/components/global/DetailsSection/types";
   import { filterZeroValues } from "~~/components/global/DetailsSection/types";
   import type { ItemAttachment } from "~~/lib/api/types/data-contracts";
@@ -33,6 +34,12 @@
     return data;
   });
   onMounted(() => {
+    refresh();
+  });
+
+  // Recording a stock movement on the consumption tab changes the quantity
+  // shown in this header, so pick the change up from the server event.
+  onServerEvent(ServerEvent.ItemMutation, () => {
     refresh();
   });
 
@@ -299,6 +306,40 @@
     return details;
   });
 
+  // Only worth showing when the item is actually being tracked as a consumable.
+  const showPantry = computed(() => {
+    if (preferences.value.showEmpty) {
+      return true;
+    }
+    return validDate(item.value?.expiryDate) || !!item.value?.minStock || !!item.value?.barcode;
+  });
+
+  const pantryDetails = computed<Details>(() => {
+    const v: Details = [
+      {
+        name: "items.expiry_date",
+        text: item.value?.expiryDate || "",
+        type: "date",
+        date: true,
+      },
+      {
+        name: "items.min_stock",
+        text: item.value?.minStock || "",
+      },
+      {
+        name: "items.barcode",
+        text: item.value?.barcode || "",
+        copyable: true,
+      },
+    ];
+
+    if (!preferences.value.showEmpty) {
+      return filterZeroValues(v);
+    }
+
+    return v;
+  });
+
   const showPurchase = computed(() => {
     if (preferences.value.showEmpty) {
       return true;
@@ -405,6 +446,11 @@
         id: "log",
         name: "global.maintenance",
         to: `/item/${itemId.value}/maintenance`,
+      },
+      {
+        id: "consumption",
+        name: "pantry.consumption.title",
+        to: `/item/${itemId.value}/consumption`,
       },
       {
         id: "edit",
@@ -606,6 +652,11 @@
             <div v-else>
               <p class="px-6 pb-4 text-base-content/70">No attachments found</p>
             </div>
+          </BaseCard>
+
+          <BaseCard v-if="showPantry" collapsable>
+            <template #title> {{ $t("items.pantry_details") }} </template>
+            <DetailsSection :details="pantryDetails" />
           </BaseCard>
 
           <BaseCard v-if="showPurchase" collapsable>

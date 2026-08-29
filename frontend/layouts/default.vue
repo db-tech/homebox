@@ -134,6 +134,7 @@
   import MdiAccount from "~icons/mdi/account";
   import MdiCog from "~icons/mdi/cog";
   import MdiWrench from "~icons/mdi/wrench";
+  import MdiFridgeOutline from "~icons/mdi/fridge-outline";
   import MdiPlus from "~icons/mdi/plus";
   import MdiLogout from "~icons/mdi/logout";
 
@@ -284,6 +285,13 @@
       active: computed(() => route.path === "/maintenance"),
       name: computed(() => t("menu.maintenance")),
       to: "/maintenance",
+    },
+    {
+      icon: MdiFridgeOutline,
+      id: 6,
+      active: computed(() => route.path === "/pantry"),
+      name: computed(() => t("menu.pantry")),
+      to: "/pantry",
     },
     {
       icon: MdiAccount,

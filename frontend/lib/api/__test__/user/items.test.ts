@@ -39,6 +39,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: "test-description",
       locationId: location.id,
+      barcode: "",
     });
     expect(response.status).toBe(201);
 
@@ -73,6 +74,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: faker.lorem.paragraph(1),
       locationId: location.id,
+      barcode: "",
     });
     expect(response.status).toBe(201);
 
@@ -127,6 +129,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: faker.lorem.paragraph(1),
       locationId: location.id,
+      barcode: "",
     });
     expect(response.status).toBe(201);
 
@@ -178,6 +181,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: faker.lorem.paragraph(1),
       locationId: lastLocationId,
+      barcode: "",
     });
     expect(response.status).toBe(201);
 
@@ -202,6 +206,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: "test-description",
       locationId: parentLocation.id,
+      barcode: "",
     });
     expect(parentResponse.status).toBe(201);
     expect(parent.id).toBeTruthy();
@@ -211,6 +216,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: "test-description",
       locationId: childsLocation.id,
+      barcode: "",
     });
     expect(child1Response.status).toBe(201);
     const child1ItemUpdate = {
@@ -227,6 +233,7 @@ describe("user should be able to create an item and add an attachment", () => {
       labelIds: [],
       description: "test-description",
       locationId: childsLocation.id,
+      barcode: "",
     });
     expect(child2Response.status).toBe(201);
     const child2ItemUpdate = {
