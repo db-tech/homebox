@@ -45,6 +45,18 @@ func (f AuthTokensFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AuthTokensMutation", m)
 }
 
+// The ConsumptionEntryFunc type is an adapter to allow the use of ordinary
+// function as ConsumptionEntry mutator.
+type ConsumptionEntryFunc func(context.Context, *ent.ConsumptionEntryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ConsumptionEntryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ConsumptionEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ConsumptionEntryMutation", m)
+}
+
 // The DocumentFunc type is an adapter to allow the use of ordinary
 // function as Document mutator.
 type DocumentFunc func(context.Context, *ent.DocumentMutation) (ent.Value, error)

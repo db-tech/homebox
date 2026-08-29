@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/consumptionentry"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/item"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/itemfield"
@@ -37,6 +38,7 @@ type ItemQuery struct {
 	withLocation           *LocationQuery
 	withFields             *ItemFieldQuery
 	withMaintenanceEntries *MaintenanceEntryQuery
+	withConsumptionEntries *ConsumptionEntryQuery
 	withAttachments        *AttachmentQuery
 	withFKs                bool
 	// intermediate query (i.e. traversal path).
@@ -222,6 +224,28 @@ func (iq *ItemQuery) QueryMaintenanceEntries() *MaintenanceEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(maintenanceentry.Table, maintenanceentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.MaintenanceEntriesTable, item.MaintenanceEntriesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryConsumptionEntries chains the current query on the "consumption_entries" edge.
+func (iq *ItemQuery) QueryConsumptionEntries() *ConsumptionEntryQuery {
+	query := (&ConsumptionEntryClient{config: iq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(consumptionentry.Table, consumptionentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ConsumptionEntriesTable, item.ConsumptionEntriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
 		return fromU, nil
@@ -450,6 +474,7 @@ func (iq *ItemQuery) Clone() *ItemQuery {
 		withLocation:           iq.withLocation.Clone(),
 		withFields:             iq.withFields.Clone(),
 		withMaintenanceEntries: iq.withMaintenanceEntries.Clone(),
+		withConsumptionEntries: iq.withConsumptionEntries.Clone(),
 		withAttachments:        iq.withAttachments.Clone(),
 		// clone intermediate query.
 		sql:  iq.sql.Clone(),
@@ -531,6 +556,17 @@ func (iq *ItemQuery) WithMaintenanceEntries(opts ...func(*MaintenanceEntryQuery)
 		opt(query)
 	}
 	iq.withMaintenanceEntries = query
+	return iq
+}
+
+// WithConsumptionEntries tells the query-builder to eager-load the nodes that are connected to
+// the "consumption_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *ItemQuery) WithConsumptionEntries(opts ...func(*ConsumptionEntryQuery)) *ItemQuery {
+	query := (&ConsumptionEntryClient{config: iq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withConsumptionEntries = query
 	return iq
 }
 
@@ -624,7 +660,7 @@ func (iq *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		nodes       = []*Item{}
 		withFKs     = iq.withFKs
 		_spec       = iq.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [9]bool{
 			iq.withGroup != nil,
 			iq.withParent != nil,
 			iq.withChildren != nil,
@@ -632,6 +668,7 @@ func (iq *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			iq.withLocation != nil,
 			iq.withFields != nil,
 			iq.withMaintenanceEntries != nil,
+			iq.withConsumptionEntries != nil,
 			iq.withAttachments != nil,
 		}
 	)
@@ -702,6 +739,13 @@ func (iq *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := iq.loadMaintenanceEntries(ctx, query, nodes,
 			func(n *Item) { n.Edges.MaintenanceEntries = []*MaintenanceEntry{} },
 			func(n *Item, e *MaintenanceEntry) { n.Edges.MaintenanceEntries = append(n.Edges.MaintenanceEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := iq.withConsumptionEntries; query != nil {
+		if err := iq.loadConsumptionEntries(ctx, query, nodes,
+			func(n *Item) { n.Edges.ConsumptionEntries = []*ConsumptionEntry{} },
+			func(n *Item, e *ConsumptionEntry) { n.Edges.ConsumptionEntries = append(n.Edges.ConsumptionEntries, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -949,6 +993,36 @@ func (iq *ItemQuery) loadMaintenanceEntries(ctx context.Context, query *Maintena
 	}
 	query.Where(predicate.MaintenanceEntry(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.MaintenanceEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (iq *ItemQuery) loadConsumptionEntries(ctx context.Context, query *ConsumptionEntryQuery, nodes []*Item, init func(*Item), assign func(*Item, *ConsumptionEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(consumptionentry.FieldItemID)
+	}
+	query.Where(predicate.ConsumptionEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ConsumptionEntriesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

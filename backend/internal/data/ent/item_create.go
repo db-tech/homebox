@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/consumptionentry"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/item"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/itemfield"
@@ -211,6 +212,48 @@ func (ic *ItemCreate) SetManufacturer(s string) *ItemCreate {
 func (ic *ItemCreate) SetNillableManufacturer(s *string) *ItemCreate {
 	if s != nil {
 		ic.SetManufacturer(*s)
+	}
+	return ic
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (ic *ItemCreate) SetExpiryDate(t time.Time) *ItemCreate {
+	ic.mutation.SetExpiryDate(t)
+	return ic
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (ic *ItemCreate) SetNillableExpiryDate(t *time.Time) *ItemCreate {
+	if t != nil {
+		ic.SetExpiryDate(*t)
+	}
+	return ic
+}
+
+// SetMinStock sets the "min_stock" field.
+func (ic *ItemCreate) SetMinStock(i int) *ItemCreate {
+	ic.mutation.SetMinStock(i)
+	return ic
+}
+
+// SetNillableMinStock sets the "min_stock" field if the given value is not nil.
+func (ic *ItemCreate) SetNillableMinStock(i *int) *ItemCreate {
+	if i != nil {
+		ic.SetMinStock(*i)
+	}
+	return ic
+}
+
+// SetBarcode sets the "barcode" field.
+func (ic *ItemCreate) SetBarcode(s string) *ItemCreate {
+	ic.mutation.SetBarcode(s)
+	return ic
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (ic *ItemCreate) SetNillableBarcode(s *string) *ItemCreate {
+	if s != nil {
+		ic.SetBarcode(*s)
 	}
 	return ic
 }
@@ -478,6 +521,21 @@ func (ic *ItemCreate) AddMaintenanceEntries(m ...*MaintenanceEntry) *ItemCreate 
 	return ic.AddMaintenanceEntryIDs(ids...)
 }
 
+// AddConsumptionEntryIDs adds the "consumption_entries" edge to the ConsumptionEntry entity by IDs.
+func (ic *ItemCreate) AddConsumptionEntryIDs(ids ...uuid.UUID) *ItemCreate {
+	ic.mutation.AddConsumptionEntryIDs(ids...)
+	return ic
+}
+
+// AddConsumptionEntries adds the "consumption_entries" edges to the ConsumptionEntry entity.
+func (ic *ItemCreate) AddConsumptionEntries(c ...*ConsumptionEntry) *ItemCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ic.AddConsumptionEntryIDs(ids...)
+}
+
 // AddAttachmentIDs adds the "attachments" edge to the Attachment entity by IDs.
 func (ic *ItemCreate) AddAttachmentIDs(ids ...uuid.UUID) *ItemCreate {
 	ic.mutation.AddAttachmentIDs(ids...)
@@ -556,6 +614,10 @@ func (ic *ItemCreate) defaults() {
 		v := item.DefaultSyncChildItemsLocations
 		ic.mutation.SetSyncChildItemsLocations(v)
 	}
+	if _, ok := ic.mutation.MinStock(); !ok {
+		v := item.DefaultMinStock
+		ic.mutation.SetMinStock(v)
+	}
 	if _, ok := ic.mutation.LifetimeWarranty(); !ok {
 		v := item.DefaultLifetimeWarranty
 		ic.mutation.SetLifetimeWarranty(v)
@@ -633,6 +695,14 @@ func (ic *ItemCreate) check() error {
 	if v, ok := ic.mutation.Manufacturer(); ok {
 		if err := item.ManufacturerValidator(v); err != nil {
 			return &ValidationError{Name: "manufacturer", err: fmt.Errorf(`ent: validator failed for field "Item.manufacturer": %w`, err)}
+		}
+	}
+	if _, ok := ic.mutation.MinStock(); !ok {
+		return &ValidationError{Name: "min_stock", err: errors.New(`ent: missing required field "Item.min_stock"`)}
+	}
+	if v, ok := ic.mutation.Barcode(); ok {
+		if err := item.BarcodeValidator(v); err != nil {
+			return &ValidationError{Name: "barcode", err: fmt.Errorf(`ent: validator failed for field "Item.barcode": %w`, err)}
 		}
 	}
 	if _, ok := ic.mutation.LifetimeWarranty(); !ok {
@@ -747,6 +817,18 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.Manufacturer(); ok {
 		_spec.SetField(item.FieldManufacturer, field.TypeString, value)
 		_node.Manufacturer = value
+	}
+	if value, ok := ic.mutation.ExpiryDate(); ok {
+		_spec.SetField(item.FieldExpiryDate, field.TypeTime, value)
+		_node.ExpiryDate = value
+	}
+	if value, ok := ic.mutation.MinStock(); ok {
+		_spec.SetField(item.FieldMinStock, field.TypeInt, value)
+		_node.MinStock = value
+	}
+	if value, ok := ic.mutation.Barcode(); ok {
+		_spec.SetField(item.FieldBarcode, field.TypeString, value)
+		_node.Barcode = value
 	}
 	if value, ok := ic.mutation.LifetimeWarranty(); ok {
 		_spec.SetField(item.FieldLifetimeWarranty, field.TypeBool, value)
@@ -896,6 +978,22 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(maintenanceentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ic.mutation.ConsumptionEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

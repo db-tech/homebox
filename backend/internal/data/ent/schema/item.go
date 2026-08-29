@@ -31,6 +31,8 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("serial_number"),
 		index.Fields("archived"),
 		index.Fields("asset_id"),
+		index.Fields("barcode"),
+		index.Fields("expiry_date"),
 	}
 }
 
@@ -63,6 +65,19 @@ func (Item) Fields() []ent.Field {
 			MaxLen(255).
 			Optional(),
 		field.String("manufacturer").
+			MaxLen(255).
+			Optional(),
+
+		// ------------------------------------
+		// Pantry / consumables
+		//
+		// These are optional and default to "off" so that non-consumable items
+		// (tools, electronics, ...) are unaffected.
+		field.Time("expiry_date").
+			Optional(),
+		field.Int("min_stock").
+			Default(0),
+		field.String("barcode").
 			MaxLen(255).
 			Optional(),
 
@@ -119,6 +134,7 @@ func (Item) Edges() []ent.Edge {
 			Unique(),
 		owned("fields", ItemField.Type),
 		owned("maintenance_entries", MaintenanceEntry.Type),
+		owned("consumption_entries", ConsumptionEntry.Type),
 		owned("attachments", Attachment.Type),
 	}
 }

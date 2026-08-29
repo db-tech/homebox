@@ -82,7 +82,7 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 			a.mwAuthToken,
 			a.mwRoles(RoleModeOr, authroles.RoleUser.String()),
 		}
-		
+
 		r.Get("/ws/events", chain.ToHandlerFunc(v1Ctrl.HandleCacheWS(), userMW...))
 		r.Get("/users/self", chain.ToHandlerFunc(v1Ctrl.HandleUserSelf(), userMW...))
 		r.Put("/users/self", chain.ToHandlerFunc(v1Ctrl.HandleUserSelfUpdate(), userMW...))
@@ -138,6 +138,17 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 
 		r.Get("/items/{id}/maintenance", chain.ToHandlerFunc(v1Ctrl.HandleMaintenanceLogGet(), userMW...))
 		r.Post("/items/{id}/maintenance", chain.ToHandlerFunc(v1Ctrl.HandleMaintenanceEntryCreate(), userMW...))
+
+		// Pantry: consumption log per item
+		r.Get("/items/{id}/consumption", chain.ToHandlerFunc(v1Ctrl.HandleConsumptionLogGet(), userMW...))
+		r.Post("/items/{id}/consumption", chain.ToHandlerFunc(v1Ctrl.HandleConsumptionCreate(), userMW...))
+		r.Delete("/consumption/{id}", chain.ToHandlerFunc(v1Ctrl.HandleConsumptionDelete(), userMW...))
+
+		// Pantry: overviews
+		r.Get("/pantry/expiring", chain.ToHandlerFunc(v1Ctrl.HandleItemsExpiring(), userMW...))
+		r.Get("/pantry/low-stock", chain.ToHandlerFunc(v1Ctrl.HandleItemsLowStock(), userMW...))
+		r.Get("/pantry/barcode", chain.ToHandlerFunc(v1Ctrl.HandleItemsByBarcode(), userMW...))
+		r.Get("/pantry/consumption/statistics", chain.ToHandlerFunc(v1Ctrl.HandleConsumptionStatistics(), userMW...))
 
 		r.Get("/assets/{id}", chain.ToHandlerFunc(v1Ctrl.HandleAssetGet(), userMW...))
 

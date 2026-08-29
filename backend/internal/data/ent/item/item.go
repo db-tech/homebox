@@ -43,6 +43,12 @@ const (
 	FieldModelNumber = "model_number"
 	// FieldManufacturer holds the string denoting the manufacturer field in the database.
 	FieldManufacturer = "manufacturer"
+	// FieldExpiryDate holds the string denoting the expiry_date field in the database.
+	FieldExpiryDate = "expiry_date"
+	// FieldMinStock holds the string denoting the min_stock field in the database.
+	FieldMinStock = "min_stock"
+	// FieldBarcode holds the string denoting the barcode field in the database.
+	FieldBarcode = "barcode"
 	// FieldLifetimeWarranty holds the string denoting the lifetime_warranty field in the database.
 	FieldLifetimeWarranty = "lifetime_warranty"
 	// FieldWarrantyExpires holds the string denoting the warranty_expires field in the database.
@@ -77,6 +83,8 @@ const (
 	EdgeFields = "fields"
 	// EdgeMaintenanceEntries holds the string denoting the maintenance_entries edge name in mutations.
 	EdgeMaintenanceEntries = "maintenance_entries"
+	// EdgeConsumptionEntries holds the string denoting the consumption_entries edge name in mutations.
+	EdgeConsumptionEntries = "consumption_entries"
 	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
 	EdgeAttachments = "attachments"
 	// Table holds the table name of the item in the database.
@@ -122,6 +130,13 @@ const (
 	MaintenanceEntriesInverseTable = "maintenance_entries"
 	// MaintenanceEntriesColumn is the table column denoting the maintenance_entries relation/edge.
 	MaintenanceEntriesColumn = "item_id"
+	// ConsumptionEntriesTable is the table that holds the consumption_entries relation/edge.
+	ConsumptionEntriesTable = "consumption_entries"
+	// ConsumptionEntriesInverseTable is the table name for the ConsumptionEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "consumptionentry" package.
+	ConsumptionEntriesInverseTable = "consumption_entries"
+	// ConsumptionEntriesColumn is the table column denoting the consumption_entries relation/edge.
+	ConsumptionEntriesColumn = "item_id"
 	// AttachmentsTable is the table that holds the attachments relation/edge.
 	AttachmentsTable = "attachments"
 	// AttachmentsInverseTable is the table name for the Attachment entity.
@@ -148,6 +163,9 @@ var Columns = []string{
 	FieldSerialNumber,
 	FieldModelNumber,
 	FieldManufacturer,
+	FieldExpiryDate,
+	FieldMinStock,
+	FieldBarcode,
 	FieldLifetimeWarranty,
 	FieldWarrantyExpires,
 	FieldWarrantyDetails,
@@ -220,6 +238,10 @@ var (
 	ModelNumberValidator func(string) error
 	// ManufacturerValidator is a validator for the "manufacturer" field. It is called by the builders before save.
 	ManufacturerValidator func(string) error
+	// DefaultMinStock holds the default value on creation for the "min_stock" field.
+	DefaultMinStock int
+	// BarcodeValidator is a validator for the "barcode" field. It is called by the builders before save.
+	BarcodeValidator func(string) error
 	// DefaultLifetimeWarranty holds the default value on creation for the "lifetime_warranty" field.
 	DefaultLifetimeWarranty bool
 	// WarrantyDetailsValidator is a validator for the "warranty_details" field. It is called by the builders before save.
@@ -310,6 +332,21 @@ func ByModelNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByManufacturer orders the results by the manufacturer field.
 func ByManufacturer(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldManufacturer, opts...).ToFunc()
+}
+
+// ByExpiryDate orders the results by the expiry_date field.
+func ByExpiryDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryDate, opts...).ToFunc()
+}
+
+// ByMinStock orders the results by the min_stock field.
+func ByMinStock(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMinStock, opts...).ToFunc()
+}
+
+// ByBarcode orders the results by the barcode field.
+func ByBarcode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBarcode, opts...).ToFunc()
 }
 
 // ByLifetimeWarranty orders the results by the lifetime_warranty field.
@@ -439,6 +476,20 @@ func ByMaintenanceEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOptio
 	}
 }
 
+// ByConsumptionEntriesCount orders the results by consumption_entries count.
+func ByConsumptionEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConsumptionEntriesStep(), opts...)
+	}
+}
+
+// ByConsumptionEntries orders the results by consumption_entries terms.
+func ByConsumptionEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConsumptionEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAttachmentsCount orders the results by attachments count.
 func ByAttachmentsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -499,6 +550,13 @@ func newMaintenanceEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MaintenanceEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MaintenanceEntriesTable, MaintenanceEntriesColumn),
+	)
+}
+func newConsumptionEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConsumptionEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConsumptionEntriesTable, ConsumptionEntriesColumn),
 	)
 }
 func newAttachmentsStep() *sqlgraph.Step {

@@ -17,6 +17,42 @@ export interface CurrenciesCurrency {
   symbol: string;
 }
 
+export interface ConsumptionCreate {
+  /**
+   * Amount is always positive; Type carries the direction.
+   * @min 1
+   */
+  amount: number;
+  /** Date defaults to now when zero. */
+  date: Date | string;
+  /** @maxLength 500 */
+  note: string;
+  type: "consume" | "restock" | "correction";
+}
+
+export interface ConsumptionEntry {
+  amount: number;
+  createdAt: Date | string;
+  date: Date | string;
+  id: string;
+  itemId: string;
+  note: string;
+  type: string;
+}
+
+export interface ConsumptionSummary {
+  /**
+   * AveragePerWeek is the consumed amount projected onto a 7 day window
+   * over the requested period. Useful to judge how long stock will last.
+   */
+  averagePerWeek: number;
+  entries: number;
+  itemId: string;
+  itemName: string;
+  totalConsumed: number;
+  totalRestocked: number;
+}
+
 export interface DocumentOut {
   id: string;
   path: string;
@@ -61,6 +97,12 @@ export interface ItemAttachmentUpdate {
 }
 
 export interface ItemCreate {
+  /**
+   * Barcode lets an item be created straight from a scan, so the code is
+   * registered without a second trip through the edit form.
+   * @maxLength 255
+   */
+  barcode: string;
   /** @maxLength 1000 */
   description: string;
   labelIds: string[];
@@ -88,8 +130,14 @@ export interface ItemOut {
   /** @example "0" */
   assetId: string;
   attachments: ItemAttachment[];
+  barcode: string;
   createdAt: Date | string;
   description: string;
+  /**
+   * Pantry - kept on the summary so list views can flag expiring and
+   * low-stock items without fetching each item individually.
+   */
+  expiryDate: Date | string;
   fields: ItemField[];
   id: string;
   imageId: string;
@@ -100,6 +148,7 @@ export interface ItemOut {
   /** Edges */
   location?: LocationSummary | null;
   manufacturer: string;
+  minStock: number;
   modelNumber: string;
   name: string;
   /** Extras */
@@ -137,14 +186,21 @@ export interface ItemSummary {
   archived: boolean;
   /** @example "0" */
   assetId: string;
+  barcode: string;
   createdAt: Date | string;
   description: string;
+  /**
+   * Pantry - kept on the summary so list views can flag expiring and
+   * low-stock items without fetching each item individually.
+   */
+  expiryDate: Date | string;
   id: string;
   imageId: string;
   insured: boolean;
   labels: LabelSummary[];
   /** Edges */
   location?: LocationSummary | null;
+  minStock: number;
   name: string;
   purchasePrice: number;
   quantity: number;
@@ -159,8 +215,12 @@ export enum ItemType {
 export interface ItemUpdate {
   archived: boolean;
   assetId: string;
+  /** @maxLength 255 */
+  barcode: string;
   /** @maxLength 1000 */
   description: string;
+  /** Pantry */
+  expiryDate: Date | string;
   fields: ItemField[];
   id: string;
   insured: boolean;
@@ -170,6 +230,7 @@ export interface ItemUpdate {
   /** Edges */
   locationId: string;
   manufacturer: string;
+  minStock: number;
   modelNumber: string;
   /**
    * @minLength 1
@@ -420,6 +481,14 @@ export interface ActionAmountResult {
   completed: number;
 }
 
+export interface AdminUserCreate {
+  email: string;
+  groupID: string;
+  isSuperuser: boolean;
+  name: string;
+  password: string;
+}
+
 export interface Build {
   buildTime: string;
   commit: string;
@@ -456,6 +525,10 @@ export interface LoginForm {
   stayLoggedIn: boolean;
   /** @example "admin@admin.com" */
   username: string;
+}
+
+export interface ResultsRepoUserOut {
+  items: UserOut[];
 }
 
 export interface TokenResponse {

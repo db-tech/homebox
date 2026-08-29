@@ -18,6 +18,8 @@ type Tx struct {
 	AuthRoles *AuthRolesClient
 	// AuthTokens is the client for interacting with the AuthTokens builders.
 	AuthTokens *AuthTokensClient
+	// ConsumptionEntry is the client for interacting with the ConsumptionEntry builders.
+	ConsumptionEntry *ConsumptionEntryClient
 	// Document is the client for interacting with the Document builders.
 	Document *DocumentClient
 	// Group is the client for interacting with the Group builders.
@@ -172,6 +174,7 @@ func (tx *Tx) init() {
 	tx.Attachment = NewAttachmentClient(tx.config)
 	tx.AuthRoles = NewAuthRolesClient(tx.config)
 	tx.AuthTokens = NewAuthTokensClient(tx.config)
+	tx.ConsumptionEntry = NewConsumptionEntryClient(tx.config)
 	tx.Document = NewDocumentClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.GroupInvitationToken = NewGroupInvitationTokenClient(tx.config)

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/consumptionentry"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/item"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/itemfield"
@@ -256,6 +257,67 @@ func (iu *ItemUpdate) SetNillableManufacturer(s *string) *ItemUpdate {
 // ClearManufacturer clears the value of the "manufacturer" field.
 func (iu *ItemUpdate) ClearManufacturer() *ItemUpdate {
 	iu.mutation.ClearManufacturer()
+	return iu
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (iu *ItemUpdate) SetExpiryDate(t time.Time) *ItemUpdate {
+	iu.mutation.SetExpiryDate(t)
+	return iu
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (iu *ItemUpdate) SetNillableExpiryDate(t *time.Time) *ItemUpdate {
+	if t != nil {
+		iu.SetExpiryDate(*t)
+	}
+	return iu
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (iu *ItemUpdate) ClearExpiryDate() *ItemUpdate {
+	iu.mutation.ClearExpiryDate()
+	return iu
+}
+
+// SetMinStock sets the "min_stock" field.
+func (iu *ItemUpdate) SetMinStock(i int) *ItemUpdate {
+	iu.mutation.ResetMinStock()
+	iu.mutation.SetMinStock(i)
+	return iu
+}
+
+// SetNillableMinStock sets the "min_stock" field if the given value is not nil.
+func (iu *ItemUpdate) SetNillableMinStock(i *int) *ItemUpdate {
+	if i != nil {
+		iu.SetMinStock(*i)
+	}
+	return iu
+}
+
+// AddMinStock adds i to the "min_stock" field.
+func (iu *ItemUpdate) AddMinStock(i int) *ItemUpdate {
+	iu.mutation.AddMinStock(i)
+	return iu
+}
+
+// SetBarcode sets the "barcode" field.
+func (iu *ItemUpdate) SetBarcode(s string) *ItemUpdate {
+	iu.mutation.SetBarcode(s)
+	return iu
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (iu *ItemUpdate) SetNillableBarcode(s *string) *ItemUpdate {
+	if s != nil {
+		iu.SetBarcode(*s)
+	}
+	return iu
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (iu *ItemUpdate) ClearBarcode() *ItemUpdate {
+	iu.mutation.ClearBarcode()
 	return iu
 }
 
@@ -564,6 +626,21 @@ func (iu *ItemUpdate) AddMaintenanceEntries(m ...*MaintenanceEntry) *ItemUpdate 
 	return iu.AddMaintenanceEntryIDs(ids...)
 }
 
+// AddConsumptionEntryIDs adds the "consumption_entries" edge to the ConsumptionEntry entity by IDs.
+func (iu *ItemUpdate) AddConsumptionEntryIDs(ids ...uuid.UUID) *ItemUpdate {
+	iu.mutation.AddConsumptionEntryIDs(ids...)
+	return iu
+}
+
+// AddConsumptionEntries adds the "consumption_entries" edges to the ConsumptionEntry entity.
+func (iu *ItemUpdate) AddConsumptionEntries(c ...*ConsumptionEntry) *ItemUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iu.AddConsumptionEntryIDs(ids...)
+}
+
 // AddAttachmentIDs adds the "attachments" edge to the Attachment entity by IDs.
 func (iu *ItemUpdate) AddAttachmentIDs(ids ...uuid.UUID) *ItemUpdate {
 	iu.mutation.AddAttachmentIDs(ids...)
@@ -686,6 +763,27 @@ func (iu *ItemUpdate) RemoveMaintenanceEntries(m ...*MaintenanceEntry) *ItemUpda
 	return iu.RemoveMaintenanceEntryIDs(ids...)
 }
 
+// ClearConsumptionEntries clears all "consumption_entries" edges to the ConsumptionEntry entity.
+func (iu *ItemUpdate) ClearConsumptionEntries() *ItemUpdate {
+	iu.mutation.ClearConsumptionEntries()
+	return iu
+}
+
+// RemoveConsumptionEntryIDs removes the "consumption_entries" edge to ConsumptionEntry entities by IDs.
+func (iu *ItemUpdate) RemoveConsumptionEntryIDs(ids ...uuid.UUID) *ItemUpdate {
+	iu.mutation.RemoveConsumptionEntryIDs(ids...)
+	return iu
+}
+
+// RemoveConsumptionEntries removes "consumption_entries" edges to ConsumptionEntry entities.
+func (iu *ItemUpdate) RemoveConsumptionEntries(c ...*ConsumptionEntry) *ItemUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iu.RemoveConsumptionEntryIDs(ids...)
+}
+
 // ClearAttachments clears all "attachments" edges to the Attachment entity.
 func (iu *ItemUpdate) ClearAttachments() *ItemUpdate {
 	iu.mutation.ClearAttachments()
@@ -780,6 +878,11 @@ func (iu *ItemUpdate) check() error {
 			return &ValidationError{Name: "manufacturer", err: fmt.Errorf(`ent: validator failed for field "Item.manufacturer": %w`, err)}
 		}
 	}
+	if v, ok := iu.mutation.Barcode(); ok {
+		if err := item.BarcodeValidator(v); err != nil {
+			return &ValidationError{Name: "barcode", err: fmt.Errorf(`ent: validator failed for field "Item.barcode": %w`, err)}
+		}
+	}
 	if v, ok := iu.mutation.WarrantyDetails(); ok {
 		if err := item.WarrantyDetailsValidator(v); err != nil {
 			return &ValidationError{Name: "warranty_details", err: fmt.Errorf(`ent: validator failed for field "Item.warranty_details": %w`, err)}
@@ -870,6 +973,24 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if iu.mutation.ManufacturerCleared() {
 		_spec.ClearField(item.FieldManufacturer, field.TypeString)
+	}
+	if value, ok := iu.mutation.ExpiryDate(); ok {
+		_spec.SetField(item.FieldExpiryDate, field.TypeTime, value)
+	}
+	if iu.mutation.ExpiryDateCleared() {
+		_spec.ClearField(item.FieldExpiryDate, field.TypeTime)
+	}
+	if value, ok := iu.mutation.MinStock(); ok {
+		_spec.SetField(item.FieldMinStock, field.TypeInt, value)
+	}
+	if value, ok := iu.mutation.AddedMinStock(); ok {
+		_spec.AddField(item.FieldMinStock, field.TypeInt, value)
+	}
+	if value, ok := iu.mutation.Barcode(); ok {
+		_spec.SetField(item.FieldBarcode, field.TypeString, value)
+	}
+	if iu.mutation.BarcodeCleared() {
+		_spec.ClearField(item.FieldBarcode, field.TypeString)
 	}
 	if value, ok := iu.mutation.LifetimeWarranty(); ok {
 		_spec.SetField(item.FieldLifetimeWarranty, field.TypeBool, value)
@@ -1195,6 +1316,51 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if iu.mutation.ConsumptionEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.RemovedConsumptionEntriesIDs(); len(nodes) > 0 && !iu.mutation.ConsumptionEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.ConsumptionEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if iu.mutation.AttachmentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1481,6 +1647,67 @@ func (iuo *ItemUpdateOne) SetNillableManufacturer(s *string) *ItemUpdateOne {
 // ClearManufacturer clears the value of the "manufacturer" field.
 func (iuo *ItemUpdateOne) ClearManufacturer() *ItemUpdateOne {
 	iuo.mutation.ClearManufacturer()
+	return iuo
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (iuo *ItemUpdateOne) SetExpiryDate(t time.Time) *ItemUpdateOne {
+	iuo.mutation.SetExpiryDate(t)
+	return iuo
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableExpiryDate(t *time.Time) *ItemUpdateOne {
+	if t != nil {
+		iuo.SetExpiryDate(*t)
+	}
+	return iuo
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (iuo *ItemUpdateOne) ClearExpiryDate() *ItemUpdateOne {
+	iuo.mutation.ClearExpiryDate()
+	return iuo
+}
+
+// SetMinStock sets the "min_stock" field.
+func (iuo *ItemUpdateOne) SetMinStock(i int) *ItemUpdateOne {
+	iuo.mutation.ResetMinStock()
+	iuo.mutation.SetMinStock(i)
+	return iuo
+}
+
+// SetNillableMinStock sets the "min_stock" field if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableMinStock(i *int) *ItemUpdateOne {
+	if i != nil {
+		iuo.SetMinStock(*i)
+	}
+	return iuo
+}
+
+// AddMinStock adds i to the "min_stock" field.
+func (iuo *ItemUpdateOne) AddMinStock(i int) *ItemUpdateOne {
+	iuo.mutation.AddMinStock(i)
+	return iuo
+}
+
+// SetBarcode sets the "barcode" field.
+func (iuo *ItemUpdateOne) SetBarcode(s string) *ItemUpdateOne {
+	iuo.mutation.SetBarcode(s)
+	return iuo
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableBarcode(s *string) *ItemUpdateOne {
+	if s != nil {
+		iuo.SetBarcode(*s)
+	}
+	return iuo
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (iuo *ItemUpdateOne) ClearBarcode() *ItemUpdateOne {
+	iuo.mutation.ClearBarcode()
 	return iuo
 }
 
@@ -1789,6 +2016,21 @@ func (iuo *ItemUpdateOne) AddMaintenanceEntries(m ...*MaintenanceEntry) *ItemUpd
 	return iuo.AddMaintenanceEntryIDs(ids...)
 }
 
+// AddConsumptionEntryIDs adds the "consumption_entries" edge to the ConsumptionEntry entity by IDs.
+func (iuo *ItemUpdateOne) AddConsumptionEntryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	iuo.mutation.AddConsumptionEntryIDs(ids...)
+	return iuo
+}
+
+// AddConsumptionEntries adds the "consumption_entries" edges to the ConsumptionEntry entity.
+func (iuo *ItemUpdateOne) AddConsumptionEntries(c ...*ConsumptionEntry) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iuo.AddConsumptionEntryIDs(ids...)
+}
+
 // AddAttachmentIDs adds the "attachments" edge to the Attachment entity by IDs.
 func (iuo *ItemUpdateOne) AddAttachmentIDs(ids ...uuid.UUID) *ItemUpdateOne {
 	iuo.mutation.AddAttachmentIDs(ids...)
@@ -1911,6 +2153,27 @@ func (iuo *ItemUpdateOne) RemoveMaintenanceEntries(m ...*MaintenanceEntry) *Item
 	return iuo.RemoveMaintenanceEntryIDs(ids...)
 }
 
+// ClearConsumptionEntries clears all "consumption_entries" edges to the ConsumptionEntry entity.
+func (iuo *ItemUpdateOne) ClearConsumptionEntries() *ItemUpdateOne {
+	iuo.mutation.ClearConsumptionEntries()
+	return iuo
+}
+
+// RemoveConsumptionEntryIDs removes the "consumption_entries" edge to ConsumptionEntry entities by IDs.
+func (iuo *ItemUpdateOne) RemoveConsumptionEntryIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	iuo.mutation.RemoveConsumptionEntryIDs(ids...)
+	return iuo
+}
+
+// RemoveConsumptionEntries removes "consumption_entries" edges to ConsumptionEntry entities.
+func (iuo *ItemUpdateOne) RemoveConsumptionEntries(c ...*ConsumptionEntry) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return iuo.RemoveConsumptionEntryIDs(ids...)
+}
+
 // ClearAttachments clears all "attachments" edges to the Attachment entity.
 func (iuo *ItemUpdateOne) ClearAttachments() *ItemUpdateOne {
 	iuo.mutation.ClearAttachments()
@@ -2016,6 +2279,11 @@ func (iuo *ItemUpdateOne) check() error {
 	if v, ok := iuo.mutation.Manufacturer(); ok {
 		if err := item.ManufacturerValidator(v); err != nil {
 			return &ValidationError{Name: "manufacturer", err: fmt.Errorf(`ent: validator failed for field "Item.manufacturer": %w`, err)}
+		}
+	}
+	if v, ok := iuo.mutation.Barcode(); ok {
+		if err := item.BarcodeValidator(v); err != nil {
+			return &ValidationError{Name: "barcode", err: fmt.Errorf(`ent: validator failed for field "Item.barcode": %w`, err)}
 		}
 	}
 	if v, ok := iuo.mutation.WarrantyDetails(); ok {
@@ -2125,6 +2393,24 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 	}
 	if iuo.mutation.ManufacturerCleared() {
 		_spec.ClearField(item.FieldManufacturer, field.TypeString)
+	}
+	if value, ok := iuo.mutation.ExpiryDate(); ok {
+		_spec.SetField(item.FieldExpiryDate, field.TypeTime, value)
+	}
+	if iuo.mutation.ExpiryDateCleared() {
+		_spec.ClearField(item.FieldExpiryDate, field.TypeTime)
+	}
+	if value, ok := iuo.mutation.MinStock(); ok {
+		_spec.SetField(item.FieldMinStock, field.TypeInt, value)
+	}
+	if value, ok := iuo.mutation.AddedMinStock(); ok {
+		_spec.AddField(item.FieldMinStock, field.TypeInt, value)
+	}
+	if value, ok := iuo.mutation.Barcode(); ok {
+		_spec.SetField(item.FieldBarcode, field.TypeString, value)
+	}
+	if iuo.mutation.BarcodeCleared() {
+		_spec.ClearField(item.FieldBarcode, field.TypeString)
 	}
 	if value, ok := iuo.mutation.LifetimeWarranty(); ok {
 		_spec.SetField(item.FieldLifetimeWarranty, field.TypeBool, value)
@@ -2443,6 +2729,51 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(maintenanceentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iuo.mutation.ConsumptionEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.RemovedConsumptionEntriesIDs(); len(nodes) > 0 && !iuo.mutation.ConsumptionEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.ConsumptionEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ConsumptionEntriesTable,
+			Columns: []string{item.ConsumptionEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consumptionentry.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

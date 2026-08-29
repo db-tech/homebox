@@ -16,6 +16,10 @@ func (at *AuthTokens) GetID() uuid.UUID {
 	return at.ID
 }
 
+func (ce *ConsumptionEntry) GetID() uuid.UUID {
+	return ce.ID
+}
+
 func (d *Document) GetID() uuid.UUID {
 	return d.ID
 }

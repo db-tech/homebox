@@ -17,6 +17,7 @@ type AllRepos struct {
 	Docs        *DocumentRepository
 	Attachments *AttachmentRepo
 	MaintEntry  *MaintenanceEntryRepository
+	Consumption *ConsumptionRepository
 	Notifiers   *NotifierRepository
 }
 
@@ -31,6 +32,7 @@ func New(db *ent.Client, bus *eventbus.EventBus, root string) *AllRepos {
 		Docs:        &DocumentRepository{db, root},
 		Attachments: &AttachmentRepo{db},
 		MaintEntry:  &MaintenanceEntryRepository{db},
+		Consumption: &ConsumptionRepository{db, bus},
 		Notifiers:   NewNotifierRepository(db),
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/authroles"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/authtokens"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/consumptionentry"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/document"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/groupinvitationtoken"
@@ -42,6 +43,8 @@ type Client struct {
 	AuthRoles *AuthRolesClient
 	// AuthTokens is the client for interacting with the AuthTokens builders.
 	AuthTokens *AuthTokensClient
+	// ConsumptionEntry is the client for interacting with the ConsumptionEntry builders.
+	ConsumptionEntry *ConsumptionEntryClient
 	// Document is the client for interacting with the Document builders.
 	Document *DocumentClient
 	// Group is the client for interacting with the Group builders.
@@ -76,6 +79,7 @@ func (c *Client) init() {
 	c.Attachment = NewAttachmentClient(c.config)
 	c.AuthRoles = NewAuthRolesClient(c.config)
 	c.AuthTokens = NewAuthTokensClient(c.config)
+	c.ConsumptionEntry = NewConsumptionEntryClient(c.config)
 	c.Document = NewDocumentClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.GroupInvitationToken = NewGroupInvitationTokenClient(c.config)
@@ -181,6 +185,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Attachment:           NewAttachmentClient(cfg),
 		AuthRoles:            NewAuthRolesClient(cfg),
 		AuthTokens:           NewAuthTokensClient(cfg),
+		ConsumptionEntry:     NewConsumptionEntryClient(cfg),
 		Document:             NewDocumentClient(cfg),
 		Group:                NewGroupClient(cfg),
 		GroupInvitationToken: NewGroupInvitationTokenClient(cfg),
@@ -213,6 +218,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Attachment:           NewAttachmentClient(cfg),
 		AuthRoles:            NewAuthRolesClient(cfg),
 		AuthTokens:           NewAuthTokensClient(cfg),
+		ConsumptionEntry:     NewConsumptionEntryClient(cfg),
 		Document:             NewDocumentClient(cfg),
 		Group:                NewGroupClient(cfg),
 		GroupInvitationToken: NewGroupInvitationTokenClient(cfg),
@@ -252,8 +258,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Attachment, c.AuthRoles, c.AuthTokens, c.Document, c.Group,
-		c.GroupInvitationToken, c.Item, c.ItemField, c.Label, c.Location,
+		c.Attachment, c.AuthRoles, c.AuthTokens, c.ConsumptionEntry, c.Document,
+		c.Group, c.GroupInvitationToken, c.Item, c.ItemField, c.Label, c.Location,
 		c.MaintenanceEntry, c.Notifier, c.User,
 	} {
 		n.Use(hooks...)
@@ -264,8 +270,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Attachment, c.AuthRoles, c.AuthTokens, c.Document, c.Group,
-		c.GroupInvitationToken, c.Item, c.ItemField, c.Label, c.Location,
+		c.Attachment, c.AuthRoles, c.AuthTokens, c.ConsumptionEntry, c.Document,
+		c.Group, c.GroupInvitationToken, c.Item, c.ItemField, c.Label, c.Location,
 		c.MaintenanceEntry, c.Notifier, c.User,
 	} {
 		n.Intercept(interceptors...)
@@ -281,6 +287,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AuthRoles.mutate(ctx, m)
 	case *AuthTokensMutation:
 		return c.AuthTokens.mutate(ctx, m)
+	case *ConsumptionEntryMutation:
+		return c.ConsumptionEntry.mutate(ctx, m)
 	case *DocumentMutation:
 		return c.Document.mutate(ctx, m)
 	case *GroupMutation:
@@ -782,6 +790,155 @@ func (c *AuthTokensClient) mutate(ctx context.Context, m *AuthTokensMutation) (V
 		return (&AuthTokensDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AuthTokens mutation op: %q", m.Op())
+	}
+}
+
+// ConsumptionEntryClient is a client for the ConsumptionEntry schema.
+type ConsumptionEntryClient struct {
+	config
+}
+
+// NewConsumptionEntryClient returns a client for the ConsumptionEntry from the given config.
+func NewConsumptionEntryClient(c config) *ConsumptionEntryClient {
+	return &ConsumptionEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `consumptionentry.Hooks(f(g(h())))`.
+func (c *ConsumptionEntryClient) Use(hooks ...Hook) {
+	c.hooks.ConsumptionEntry = append(c.hooks.ConsumptionEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `consumptionentry.Intercept(f(g(h())))`.
+func (c *ConsumptionEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ConsumptionEntry = append(c.inters.ConsumptionEntry, interceptors...)
+}
+
+// Create returns a builder for creating a ConsumptionEntry entity.
+func (c *ConsumptionEntryClient) Create() *ConsumptionEntryCreate {
+	mutation := newConsumptionEntryMutation(c.config, OpCreate)
+	return &ConsumptionEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ConsumptionEntry entities.
+func (c *ConsumptionEntryClient) CreateBulk(builders ...*ConsumptionEntryCreate) *ConsumptionEntryCreateBulk {
+	return &ConsumptionEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ConsumptionEntryClient) MapCreateBulk(slice any, setFunc func(*ConsumptionEntryCreate, int)) *ConsumptionEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ConsumptionEntryCreateBulk{err: fmt.Errorf("calling to ConsumptionEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ConsumptionEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ConsumptionEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ConsumptionEntry.
+func (c *ConsumptionEntryClient) Update() *ConsumptionEntryUpdate {
+	mutation := newConsumptionEntryMutation(c.config, OpUpdate)
+	return &ConsumptionEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ConsumptionEntryClient) UpdateOne(ce *ConsumptionEntry) *ConsumptionEntryUpdateOne {
+	mutation := newConsumptionEntryMutation(c.config, OpUpdateOne, withConsumptionEntry(ce))
+	return &ConsumptionEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ConsumptionEntryClient) UpdateOneID(id uuid.UUID) *ConsumptionEntryUpdateOne {
+	mutation := newConsumptionEntryMutation(c.config, OpUpdateOne, withConsumptionEntryID(id))
+	return &ConsumptionEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ConsumptionEntry.
+func (c *ConsumptionEntryClient) Delete() *ConsumptionEntryDelete {
+	mutation := newConsumptionEntryMutation(c.config, OpDelete)
+	return &ConsumptionEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ConsumptionEntryClient) DeleteOne(ce *ConsumptionEntry) *ConsumptionEntryDeleteOne {
+	return c.DeleteOneID(ce.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ConsumptionEntryClient) DeleteOneID(id uuid.UUID) *ConsumptionEntryDeleteOne {
+	builder := c.Delete().Where(consumptionentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ConsumptionEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for ConsumptionEntry.
+func (c *ConsumptionEntryClient) Query() *ConsumptionEntryQuery {
+	return &ConsumptionEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeConsumptionEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ConsumptionEntry entity by its id.
+func (c *ConsumptionEntryClient) Get(ctx context.Context, id uuid.UUID) (*ConsumptionEntry, error) {
+	return c.Query().Where(consumptionentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ConsumptionEntryClient) GetX(ctx context.Context, id uuid.UUID) *ConsumptionEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a ConsumptionEntry.
+func (c *ConsumptionEntryClient) QueryItem(ce *ConsumptionEntry) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ce.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(consumptionentry.Table, consumptionentry.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, consumptionentry.ItemTable, consumptionentry.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(ce.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ConsumptionEntryClient) Hooks() []Hook {
+	return c.hooks.ConsumptionEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *ConsumptionEntryClient) Interceptors() []Interceptor {
+	return c.inters.ConsumptionEntry
+}
+
+func (c *ConsumptionEntryClient) mutate(ctx context.Context, m *ConsumptionEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ConsumptionEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ConsumptionEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ConsumptionEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ConsumptionEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ConsumptionEntry mutation op: %q", m.Op())
 	}
 }
 
@@ -1557,6 +1714,22 @@ func (c *ItemClient) QueryMaintenanceEntries(i *Item) *MaintenanceEntryQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(maintenanceentry.Table, maintenanceentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.MaintenanceEntriesTable, item.MaintenanceEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConsumptionEntries queries the consumption_entries edge of a Item.
+func (c *ItemClient) QueryConsumptionEntries(i *Item) *ConsumptionEntryQuery {
+	query := (&ConsumptionEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(consumptionentry.Table, consumptionentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ConsumptionEntriesTable, item.ConsumptionEntriesColumn),
 		)
 		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
 		return fromV, nil
@@ -2614,11 +2787,13 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Attachment, AuthRoles, AuthTokens, Document, Group, GroupInvitationToken, Item,
-		ItemField, Label, Location, MaintenanceEntry, Notifier, User []ent.Hook
+		Attachment, AuthRoles, AuthTokens, ConsumptionEntry, Document, Group,
+		GroupInvitationToken, Item, ItemField, Label, Location, MaintenanceEntry,
+		Notifier, User []ent.Hook
 	}
 	inters struct {
-		Attachment, AuthRoles, AuthTokens, Document, Group, GroupInvitationToken, Item,
-		ItemField, Label, Location, MaintenanceEntry, Notifier, User []ent.Interceptor
+		Attachment, AuthRoles, AuthTokens, ConsumptionEntry, Document, Group,
+		GroupInvitationToken, Item, ItemField, Label, Location, MaintenanceEntry,
+		Notifier, User []ent.Interceptor
 	}
 )

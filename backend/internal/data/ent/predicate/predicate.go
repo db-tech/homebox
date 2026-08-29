@@ -15,6 +15,9 @@ type AuthRoles func(*sql.Selector)
 // AuthTokens is the predicate function for authtokens builders.
 type AuthTokens func(*sql.Selector)
 
+// ConsumptionEntry is the predicate function for consumptionentry builders.
+type ConsumptionEntry func(*sql.Selector)
+
 // Document is the predicate function for document builders.
 type Document func(*sql.Selector)
 

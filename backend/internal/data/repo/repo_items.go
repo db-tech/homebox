@@ -63,6 +63,10 @@ type (
 		Description string    `json:"description" validate:"max=1000"`
 		AssetID     AssetID   `json:"-"`
 
+		// Barcode lets an item be created straight from a scan, so the code is
+		// registered without a second trip through the edit form.
+		Barcode string `json:"barcode" validate:"max=255"`
+
 		// Edges
 		LocationID uuid.UUID   `json:"locationId"`
 		LabelIDs   []uuid.UUID `json:"labelIds"`
@@ -87,6 +91,11 @@ type (
 		SerialNumber string `json:"serialNumber"`
 		ModelNumber  string `json:"modelNumber"`
 		Manufacturer string `json:"manufacturer"`
+
+		// Pantry
+		ExpiryDate types.Date `json:"expiryDate"`
+		MinStock   int        `json:"minStock"`
+		Barcode    string     `json:"barcode" validate:"max=255"`
 
 		// Warranty
 		LifetimeWarranty bool       `json:"lifetimeWarranty"`
@@ -128,6 +137,12 @@ type (
 		UpdatedAt   time.Time `json:"updatedAt"`
 
 		PurchasePrice float64 `json:"purchasePrice"`
+
+		// Pantry - kept on the summary so list views can flag expiring and
+		// low-stock items without fetching each item individually.
+		ExpiryDate types.Date `json:"expiryDate"`
+		MinStock   int        `json:"minStock"`
+		Barcode    string     `json:"barcode"`
 
 		// Edges
 		Location *LocationSummary `json:"location,omitempty" extensions:"x-nullable,x-omitempty"`
@@ -205,6 +220,11 @@ func mapItemSummary(item *ent.Item) ItemSummary {
 		UpdatedAt:     item.UpdatedAt,
 		Archived:      item.Archived,
 		PurchasePrice: item.PurchasePrice,
+
+		// Pantry
+		ExpiryDate: types.DateFromTime(item.ExpiryDate),
+		MinStock:   item.MinStock,
+		Barcode:    item.Barcode,
 
 		// Edges
 		Location: location,
@@ -575,7 +595,8 @@ func (e *ItemsRepository) Create(ctx context.Context, gid uuid.UUID, data ItemCr
 		SetDescription(data.Description).
 		SetGroupID(gid).
 		SetLocationID(data.LocationID).
-		SetAssetID(int(data.AssetID))
+		SetAssetID(int(data.AssetID)).
+		SetBarcode(data.Barcode)
 
 	if len(data.LabelIDs) > 0 {
 		q.AddLabelIDs(data.LabelIDs...)
@@ -638,7 +659,18 @@ func (e *ItemsRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, data
 		SetWarrantyDetails(data.WarrantyDetails).
 		SetQuantity(data.Quantity).
 		SetAssetID(int(data.AssetID)).
-		SetSyncChildItemsLocations(data.SyncChildItemsLocations)
+		SetSyncChildItemsLocations(data.SyncChildItemsLocations).
+		SetMinStock(data.MinStock).
+		SetBarcode(data.Barcode)
+
+	// An unset expiry date must be stored as NULL, not as the zero time.
+	// Otherwise every item saved without an expiry date looks like it expired
+	// two thousand years ago and floods the expiry warning list.
+	if expiry := data.ExpiryDate.Time(); expiry.IsZero() {
+		q.ClearExpiryDate()
+	} else {
+		q.SetExpiryDate(expiry)
+	}
 
 	currentLabels, err := e.db.Item.Query().Where(item.ID(data.ID)).QueryLabel().All(ctx)
 	if err != nil {
