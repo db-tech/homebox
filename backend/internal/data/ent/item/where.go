@@ -126,6 +126,21 @@ func Manufacturer(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldManufacturer, v))
 }
 
+// ExpiryDate applies equality check predicate on the "expiry_date" field. It's identical to ExpiryDateEQ.
+func ExpiryDate(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldExpiryDate, v))
+}
+
+// MinStock applies equality check predicate on the "min_stock" field. It's identical to MinStockEQ.
+func MinStock(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMinStock, v))
+}
+
+// Barcode applies equality check predicate on the "barcode" field. It's identical to BarcodeEQ.
+func Barcode(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBarcode, v))
+}
+
 // LifetimeWarranty applies equality check predicate on the "lifetime_warranty" field. It's identical to LifetimeWarrantyEQ.
 func LifetimeWarranty(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldLifetimeWarranty, v))
@@ -881,6 +896,171 @@ func ManufacturerContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldManufacturer, v))
 }
 
+// ExpiryDateEQ applies the EQ predicate on the "expiry_date" field.
+func ExpiryDateEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateNEQ applies the NEQ predicate on the "expiry_date" field.
+func ExpiryDateNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateIn applies the In predicate on the "expiry_date" field.
+func ExpiryDateIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateNotIn applies the NotIn predicate on the "expiry_date" field.
+func ExpiryDateNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateGT applies the GT predicate on the "expiry_date" field.
+func ExpiryDateGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldExpiryDate, v))
+}
+
+// ExpiryDateGTE applies the GTE predicate on the "expiry_date" field.
+func ExpiryDateGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateLT applies the LT predicate on the "expiry_date" field.
+func ExpiryDateLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldExpiryDate, v))
+}
+
+// ExpiryDateLTE applies the LTE predicate on the "expiry_date" field.
+func ExpiryDateLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateIsNil applies the IsNil predicate on the "expiry_date" field.
+func ExpiryDateIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldExpiryDate))
+}
+
+// ExpiryDateNotNil applies the NotNil predicate on the "expiry_date" field.
+func ExpiryDateNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldExpiryDate))
+}
+
+// MinStockEQ applies the EQ predicate on the "min_stock" field.
+func MinStockEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMinStock, v))
+}
+
+// MinStockNEQ applies the NEQ predicate on the "min_stock" field.
+func MinStockNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldMinStock, v))
+}
+
+// MinStockIn applies the In predicate on the "min_stock" field.
+func MinStockIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldMinStock, vs...))
+}
+
+// MinStockNotIn applies the NotIn predicate on the "min_stock" field.
+func MinStockNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldMinStock, vs...))
+}
+
+// MinStockGT applies the GT predicate on the "min_stock" field.
+func MinStockGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldMinStock, v))
+}
+
+// MinStockGTE applies the GTE predicate on the "min_stock" field.
+func MinStockGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldMinStock, v))
+}
+
+// MinStockLT applies the LT predicate on the "min_stock" field.
+func MinStockLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldMinStock, v))
+}
+
+// MinStockLTE applies the LTE predicate on the "min_stock" field.
+func MinStockLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldMinStock, v))
+}
+
+// BarcodeEQ applies the EQ predicate on the "barcode" field.
+func BarcodeEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBarcode, v))
+}
+
+// BarcodeNEQ applies the NEQ predicate on the "barcode" field.
+func BarcodeNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldBarcode, v))
+}
+
+// BarcodeIn applies the In predicate on the "barcode" field.
+func BarcodeIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldBarcode, vs...))
+}
+
+// BarcodeNotIn applies the NotIn predicate on the "barcode" field.
+func BarcodeNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldBarcode, vs...))
+}
+
+// BarcodeGT applies the GT predicate on the "barcode" field.
+func BarcodeGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldBarcode, v))
+}
+
+// BarcodeGTE applies the GTE predicate on the "barcode" field.
+func BarcodeGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldBarcode, v))
+}
+
+// BarcodeLT applies the LT predicate on the "barcode" field.
+func BarcodeLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldBarcode, v))
+}
+
+// BarcodeLTE applies the LTE predicate on the "barcode" field.
+func BarcodeLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldBarcode, v))
+}
+
+// BarcodeContains applies the Contains predicate on the "barcode" field.
+func BarcodeContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldBarcode, v))
+}
+
+// BarcodeHasPrefix applies the HasPrefix predicate on the "barcode" field.
+func BarcodeHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldBarcode, v))
+}
+
+// BarcodeHasSuffix applies the HasSuffix predicate on the "barcode" field.
+func BarcodeHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldBarcode, v))
+}
+
+// BarcodeIsNil applies the IsNil predicate on the "barcode" field.
+func BarcodeIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldBarcode))
+}
+
+// BarcodeNotNil applies the NotNil predicate on the "barcode" field.
+func BarcodeNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldBarcode))
+}
+
+// BarcodeEqualFold applies the EqualFold predicate on the "barcode" field.
+func BarcodeEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldBarcode, v))
+}
+
+// BarcodeContainsFold applies the ContainsFold predicate on the "barcode" field.
+func BarcodeContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldBarcode, v))
+}
+
 // LifetimeWarrantyEQ applies the EQ predicate on the "lifetime_warranty" field.
 func LifetimeWarrantyEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldLifetimeWarranty, v))
@@ -1574,6 +1754,29 @@ func HasMaintenanceEntries() predicate.Item {
 func HasMaintenanceEntriesWith(preds ...predicate.MaintenanceEntry) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newMaintenanceEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasConsumptionEntries applies the HasEdge predicate on the "consumption_entries" edge.
+func HasConsumptionEntries() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConsumptionEntriesTable, ConsumptionEntriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConsumptionEntriesWith applies the HasEdge predicate on the "consumption_entries" edge with a given conditions (other predicates).
+func HasConsumptionEntriesWith(preds ...predicate.ConsumptionEntry) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newConsumptionEntriesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -60,6 +60,7 @@ func main() {
 		NewReDate("soldTime"),
 		NewReDate("purchaseTime"),
 		NewReDate("warrantyExpires"),
+		NewReDate("expiryDate"),
 		NewReDate("expiresAt"),
 		NewReDate("date"),
 		NewReDate("completedDate"),

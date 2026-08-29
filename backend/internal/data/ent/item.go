@@ -48,6 +48,12 @@ type Item struct {
 	ModelNumber string `json:"model_number,omitempty"`
 	// Manufacturer holds the value of the "manufacturer" field.
 	Manufacturer string `json:"manufacturer,omitempty"`
+	// ExpiryDate holds the value of the "expiry_date" field.
+	ExpiryDate time.Time `json:"expiry_date,omitempty"`
+	// MinStock holds the value of the "min_stock" field.
+	MinStock int `json:"min_stock,omitempty"`
+	// Barcode holds the value of the "barcode" field.
+	Barcode string `json:"barcode,omitempty"`
 	// LifetimeWarranty holds the value of the "lifetime_warranty" field.
 	LifetimeWarranty bool `json:"lifetime_warranty,omitempty"`
 	// WarrantyExpires holds the value of the "warranty_expires" field.
@@ -93,11 +99,13 @@ type ItemEdges struct {
 	Fields []*ItemField `json:"fields,omitempty"`
 	// MaintenanceEntries holds the value of the maintenance_entries edge.
 	MaintenanceEntries []*MaintenanceEntry `json:"maintenance_entries,omitempty"`
+	// ConsumptionEntries holds the value of the consumption_entries edge.
+	ConsumptionEntries []*ConsumptionEntry `json:"consumption_entries,omitempty"`
 	// Attachments holds the value of the attachments edge.
 	Attachments []*Attachment `json:"attachments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 }
 
 // GroupOrErr returns the Group value or an error if the edge
@@ -169,10 +177,19 @@ func (e ItemEdges) MaintenanceEntriesOrErr() ([]*MaintenanceEntry, error) {
 	return nil, &NotLoadedError{edge: "maintenance_entries"}
 }
 
+// ConsumptionEntriesOrErr returns the ConsumptionEntries value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) ConsumptionEntriesOrErr() ([]*ConsumptionEntry, error) {
+	if e.loadedTypes[7] {
+		return e.ConsumptionEntries, nil
+	}
+	return nil, &NotLoadedError{edge: "consumption_entries"}
+}
+
 // AttachmentsOrErr returns the Attachments value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) AttachmentsOrErr() ([]*Attachment, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[8] {
 		return e.Attachments, nil
 	}
 	return nil, &NotLoadedError{edge: "attachments"}
@@ -187,11 +204,11 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case item.FieldPurchasePrice, item.FieldSoldPrice:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldQuantity, item.FieldAssetID:
+		case item.FieldQuantity, item.FieldAssetID, item.FieldMinStock:
 			values[i] = new(sql.NullInt64)
-		case item.FieldName, item.FieldDescription, item.FieldImportRef, item.FieldNotes, item.FieldSerialNumber, item.FieldModelNumber, item.FieldManufacturer, item.FieldWarrantyDetails, item.FieldPurchaseFrom, item.FieldSoldTo, item.FieldSoldNotes:
+		case item.FieldName, item.FieldDescription, item.FieldImportRef, item.FieldNotes, item.FieldSerialNumber, item.FieldModelNumber, item.FieldManufacturer, item.FieldBarcode, item.FieldWarrantyDetails, item.FieldPurchaseFrom, item.FieldSoldTo, item.FieldSoldNotes:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldWarrantyExpires, item.FieldPurchaseTime, item.FieldSoldTime:
+		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldExpiryDate, item.FieldWarrantyExpires, item.FieldPurchaseTime, item.FieldSoldTime:
 			values[i] = new(sql.NullTime)
 		case item.FieldID:
 			values[i] = new(uuid.UUID)
@@ -305,6 +322,24 @@ func (i *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field manufacturer", values[j])
 			} else if value.Valid {
 				i.Manufacturer = value.String
+			}
+		case item.FieldExpiryDate:
+			if value, ok := values[j].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_date", values[j])
+			} else if value.Valid {
+				i.ExpiryDate = value.Time
+			}
+		case item.FieldMinStock:
+			if value, ok := values[j].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field min_stock", values[j])
+			} else if value.Valid {
+				i.MinStock = int(value.Int64)
+			}
+		case item.FieldBarcode:
+			if value, ok := values[j].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field barcode", values[j])
+			} else if value.Valid {
+				i.Barcode = value.String
 			}
 		case item.FieldLifetimeWarranty:
 			if value, ok := values[j].(*sql.NullBool); !ok {
@@ -435,6 +470,11 @@ func (i *Item) QueryMaintenanceEntries() *MaintenanceEntryQuery {
 	return NewItemClient(i.config).QueryMaintenanceEntries(i)
 }
 
+// QueryConsumptionEntries queries the "consumption_entries" edge of the Item entity.
+func (i *Item) QueryConsumptionEntries() *ConsumptionEntryQuery {
+	return NewItemClient(i.config).QueryConsumptionEntries(i)
+}
+
 // QueryAttachments queries the "attachments" edge of the Item entity.
 func (i *Item) QueryAttachments() *AttachmentQuery {
 	return NewItemClient(i.config).QueryAttachments(i)
@@ -504,6 +544,15 @@ func (i *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("manufacturer=")
 	builder.WriteString(i.Manufacturer)
+	builder.WriteString(", ")
+	builder.WriteString("expiry_date=")
+	builder.WriteString(i.ExpiryDate.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("min_stock=")
+	builder.WriteString(fmt.Sprintf("%v", i.MinStock))
+	builder.WriteString(", ")
+	builder.WriteString("barcode=")
+	builder.WriteString(i.Barcode)
 	builder.WriteString(", ")
 	builder.WriteString("lifetime_warranty=")
 	builder.WriteString(fmt.Sprintf("%v", i.LifetimeWarranty))

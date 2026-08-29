@@ -12,6 +12,7 @@ export default [
         text: 'Users Guide',
         items: [
             {text: 'Organizing Items', link: '/en/user-guide/organizing-items'},
+            {text: 'Pantry', link: '/en/user-guide/pantry'},
             {text: 'Tips and Tricks', link: '/en/user-guide/tips-tricks'},
         ]
     },

@@ -10,6 +10,7 @@ import { AssetsApi } from "./classes/assets";
 import { ReportsAPI } from "./classes/reports";
 import { NotifiersAPI } from "./classes/notifiers";
 import { MaintenanceAPI } from "./classes/maintenance";
+import { PantryAPI } from "./classes/pantry";
 import type { Requests } from "~~/lib/requests";
 
 export class UserClient extends BaseAPI {
@@ -24,6 +25,7 @@ export class UserClient extends BaseAPI {
   assets: AssetsApi;
   reports: ReportsAPI;
   notifiers: NotifiersAPI;
+  pantry: PantryAPI;
 
   constructor(requests: Requests, attachmentToken: string) {
     super(requests, attachmentToken);
@@ -39,6 +41,7 @@ export class UserClient extends BaseAPI {
     this.assets = new AssetsApi(requests);
     this.reports = new ReportsAPI(requests);
     this.notifiers = new NotifiersAPI(requests);
+    this.pantry = new PantryAPI(requests);
 
     Object.freeze(this);
   }

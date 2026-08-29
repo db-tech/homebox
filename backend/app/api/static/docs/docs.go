@@ -117,6 +117,157 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get All Users (Admin Only)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.Results-repo_UserOut"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create New User (Admin Only)",
+                "parameters": [
+                    {
+                        "description": "User Data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.AdminUserCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/v1.Wrapped"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "item": {
+                                            "$ref": "#/definitions/repo.UserOut"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/users/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update User (Admin Only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User Data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/repo.UserUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/v1.Wrapped"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "item": {
+                                            "$ref": "#/definitions/repo.UserOut"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Delete User (Admin Only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/v1/assets/{id}": {
             "get": {
                 "security": [
@@ -146,6 +297,36 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/repo.PaginationResult-repo_ItemSummary"
                         }
+                    }
+                }
+            }
+        },
+        "/v1/consumption/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item Consumption"
+                ],
+                "summary": "Delete a consumption log entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Consumption Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -908,6 +1089,82 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/v1/items/{id}/consumption": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item Consumption"
+                ],
+                "summary": "Get the consumption log of an item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.ConsumptionEntry"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item Consumption"
+                ],
+                "summary": "Record a stock movement for an item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Entry Data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/repo.ConsumptionCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/repo.ConsumptionEntry"
+                        }
                     }
                 }
             }
@@ -1780,6 +2037,139 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/pantry/barcode": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pantry"
+                ],
+                "summary": "Look up items by barcode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "barcode to look up",
+                        "name": "barcode",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.ItemSummary"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pantry/consumption/statistics": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pantry"
+                ],
+                "summary": "Consumption statistics per item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "period in days (default 30)",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.ConsumptionSummary"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pantry/expiring": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pantry"
+                ],
+                "summary": "Get items that expire soon",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "days to look ahead (default 14)",
+                        "name": "within",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.ItemSummary"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/pantry/low-stock": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pantry"
+                ],
+                "summary": "Get items at or below their minimum stock",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.ItemSummary"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/qrcode": {
             "get": {
                 "security": [
@@ -2107,6 +2497,86 @@ const docTemplate = `{
                 }
             }
         },
+        "repo.ConsumptionCreate": {
+            "type": "object",
+            "required": [
+                "amount",
+                "type"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "Amount is always positive; Type carries the direction.",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "date": {
+                    "description": "Date defaults to now when zero.",
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "consume",
+                        "restock",
+                        "correction"
+                    ]
+                }
+            }
+        },
+        "repo.ConsumptionEntry": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "itemId": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "repo.ConsumptionSummary": {
+            "type": "object",
+            "properties": {
+                "averagePerWeek": {
+                    "description": "AveragePerWeek is the consumed amount projected onto a 7 day window\nover the requested period. Useful to judge how long stock will last.",
+                    "type": "number"
+                },
+                "entries": {
+                    "type": "integer"
+                },
+                "itemId": {
+                    "type": "string"
+                },
+                "itemName": {
+                    "type": "string"
+                },
+                "totalConsumed": {
+                    "type": "integer"
+                },
+                "totalRestocked": {
+                    "type": "integer"
+                }
+            }
+        },
         "repo.DocumentOut": {
             "type": "object",
             "properties": {
@@ -2218,6 +2688,11 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "barcode": {
+                    "description": "Barcode lets an item be created straight from a scan, so the code is\nregistered without a second trip through the edit form.",
+                    "type": "string",
+                    "maxLength": 255
+                },
                 "description": {
                     "type": "string",
                     "maxLength": 1000
@@ -2282,10 +2757,17 @@ const docTemplate = `{
                         "$ref": "#/definitions/repo.ItemAttachment"
                     }
                 },
+                "barcode": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "expiryDate": {
+                    "description": "Pantry - kept on the summary so list views can flag expiring and\nlow-stock items without fetching each item individually.",
                     "type": "string"
                 },
                 "fields": {
@@ -2325,6 +2807,9 @@ const docTemplate = `{
                 },
                 "manufacturer": {
                     "type": "string"
+                },
+                "minStock": {
+                    "type": "integer"
                 },
                 "modelNumber": {
                     "type": "string"
@@ -2425,10 +2910,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "0"
                 },
+                "barcode": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "expiryDate": {
+                    "description": "Pantry - kept on the summary so list views can flag expiring and\nlow-stock items without fetching each item individually.",
                     "type": "string"
                 },
                 "id": {
@@ -2455,6 +2947,9 @@ const docTemplate = `{
                     ],
                     "x-nullable": true,
                     "x-omitempty": true
+                },
+                "minStock": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -2493,9 +2988,17 @@ const docTemplate = `{
                 "assetId": {
                     "type": "string"
                 },
+                "barcode": {
+                    "type": "string",
+                    "maxLength": 255
+                },
                 "description": {
                     "type": "string",
                     "maxLength": 1000
+                },
+                "expiryDate": {
+                    "description": "Pantry",
+                    "type": "string"
                 },
                 "fields": {
                     "type": "array",
@@ -2525,6 +3028,9 @@ const docTemplate = `{
                 },
                 "manufacturer": {
                     "type": "string"
+                },
+                "minStock": {
+                    "type": "integer"
                 },
                 "modelNumber": {
                     "type": "string"
@@ -3138,6 +3644,26 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.AdminUserCreate": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "groupID": {
+                    "type": "string"
+                },
+                "isSuperuser": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.Build": {
             "type": "object",
             "properties": {
@@ -3214,6 +3740,17 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "admin@admin.com"
+                }
+            }
+        },
+        "v1.Results-repo_UserOut": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repo.UserOut"
+                    }
                 }
             }
         },

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/authtokens"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/consumptionentry"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/document"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/groupinvitationtoken"
@@ -73,6 +74,33 @@ func init() {
 	authtokensDescID := authtokensMixinFields0[0].Descriptor()
 	// authtokens.DefaultID holds the default value on creation for the id field.
 	authtokens.DefaultID = authtokensDescID.Default.(func() uuid.UUID)
+	consumptionentryMixin := schema.ConsumptionEntry{}.Mixin()
+	consumptionentryMixinFields0 := consumptionentryMixin[0].Fields()
+	_ = consumptionentryMixinFields0
+	consumptionentryFields := schema.ConsumptionEntry{}.Fields()
+	_ = consumptionentryFields
+	// consumptionentryDescCreatedAt is the schema descriptor for created_at field.
+	consumptionentryDescCreatedAt := consumptionentryMixinFields0[1].Descriptor()
+	// consumptionentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	consumptionentry.DefaultCreatedAt = consumptionentryDescCreatedAt.Default.(func() time.Time)
+	// consumptionentryDescUpdatedAt is the schema descriptor for updated_at field.
+	consumptionentryDescUpdatedAt := consumptionentryMixinFields0[2].Descriptor()
+	// consumptionentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	consumptionentry.DefaultUpdatedAt = consumptionentryDescUpdatedAt.Default.(func() time.Time)
+	// consumptionentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	consumptionentry.UpdateDefaultUpdatedAt = consumptionentryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// consumptionentryDescAmount is the schema descriptor for amount field.
+	consumptionentryDescAmount := consumptionentryFields[2].Descriptor()
+	// consumptionentry.AmountValidator is a validator for the "amount" field. It is called by the builders before save.
+	consumptionentry.AmountValidator = consumptionentryDescAmount.Validators[0].(func(int) error)
+	// consumptionentryDescNote is the schema descriptor for note field.
+	consumptionentryDescNote := consumptionentryFields[4].Descriptor()
+	// consumptionentry.NoteValidator is a validator for the "note" field. It is called by the builders before save.
+	consumptionentry.NoteValidator = consumptionentryDescNote.Validators[0].(func(string) error)
+	// consumptionentryDescID is the schema descriptor for id field.
+	consumptionentryDescID := consumptionentryMixinFields0[0].Descriptor()
+	// consumptionentry.DefaultID holds the default value on creation for the id field.
+	consumptionentry.DefaultID = consumptionentryDescID.Default.(func() uuid.UUID)
 	documentMixin := schema.Document{}.Mixin()
 	documentMixinFields0 := documentMixin[0].Fields()
 	_ = documentMixinFields0
@@ -275,24 +303,32 @@ func init() {
 	itemDescManufacturer := itemFields[9].Descriptor()
 	// item.ManufacturerValidator is a validator for the "manufacturer" field. It is called by the builders before save.
 	item.ManufacturerValidator = itemDescManufacturer.Validators[0].(func(string) error)
+	// itemDescMinStock is the schema descriptor for min_stock field.
+	itemDescMinStock := itemFields[11].Descriptor()
+	// item.DefaultMinStock holds the default value on creation for the min_stock field.
+	item.DefaultMinStock = itemDescMinStock.Default.(int)
+	// itemDescBarcode is the schema descriptor for barcode field.
+	itemDescBarcode := itemFields[12].Descriptor()
+	// item.BarcodeValidator is a validator for the "barcode" field. It is called by the builders before save.
+	item.BarcodeValidator = itemDescBarcode.Validators[0].(func(string) error)
 	// itemDescLifetimeWarranty is the schema descriptor for lifetime_warranty field.
-	itemDescLifetimeWarranty := itemFields[10].Descriptor()
+	itemDescLifetimeWarranty := itemFields[13].Descriptor()
 	// item.DefaultLifetimeWarranty holds the default value on creation for the lifetime_warranty field.
 	item.DefaultLifetimeWarranty = itemDescLifetimeWarranty.Default.(bool)
 	// itemDescWarrantyDetails is the schema descriptor for warranty_details field.
-	itemDescWarrantyDetails := itemFields[12].Descriptor()
+	itemDescWarrantyDetails := itemFields[15].Descriptor()
 	// item.WarrantyDetailsValidator is a validator for the "warranty_details" field. It is called by the builders before save.
 	item.WarrantyDetailsValidator = itemDescWarrantyDetails.Validators[0].(func(string) error)
 	// itemDescPurchasePrice is the schema descriptor for purchase_price field.
-	itemDescPurchasePrice := itemFields[15].Descriptor()
+	itemDescPurchasePrice := itemFields[18].Descriptor()
 	// item.DefaultPurchasePrice holds the default value on creation for the purchase_price field.
 	item.DefaultPurchasePrice = itemDescPurchasePrice.Default.(float64)
 	// itemDescSoldPrice is the schema descriptor for sold_price field.
-	itemDescSoldPrice := itemFields[18].Descriptor()
+	itemDescSoldPrice := itemFields[21].Descriptor()
 	// item.DefaultSoldPrice holds the default value on creation for the sold_price field.
 	item.DefaultSoldPrice = itemDescSoldPrice.Default.(float64)
 	// itemDescSoldNotes is the schema descriptor for sold_notes field.
-	itemDescSoldNotes := itemFields[19].Descriptor()
+	itemDescSoldNotes := itemFields[22].Descriptor()
 	// item.SoldNotesValidator is a validator for the "sold_notes" field. It is called by the builders before save.
 	item.SoldNotesValidator = itemDescSoldNotes.Validators[0].(func(string) error)
 	// itemDescID is the schema descriptor for id field.

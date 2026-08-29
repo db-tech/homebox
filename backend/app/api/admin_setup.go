@@ -36,7 +36,7 @@ func (a *app) setupAdminUser() error {
 	existingUser, err := a.repos.Users.GetOneEmail(ctx, adminEmail)
 	if err == nil {
 		log.Info().Msgf("Admin user %s already exists", adminEmail)
-		
+
 		// If the user exists but is not a superuser, update them to be a superuser
 		if !existingUser.IsSuperuser {
 			log.Info().Msgf("Updating %s to be a superuser", adminEmail)
@@ -49,19 +49,19 @@ func (a *app) setupAdminUser() error {
 				log.Err(err).Msg("Failed to update user data")
 				return err
 			}
-			
+
 			// Update the user to be a superuser
 			err = a.repos.Users.SetSuperuser(ctx, existingUser.ID, true)
 			if err != nil {
 				log.Err(err).Msg("Failed to set user as superuser")
 				return err
 			}
-			
+
 			log.Info().Msgf("User %s is now a superuser", adminEmail)
 		} else {
 			log.Info().Msgf("User %s is already a superuser", adminEmail)
 		}
-		
+
 		return nil
 	}
 

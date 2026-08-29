@@ -115,7 +115,7 @@ export class ItemsApi extends BaseAPI {
     }
 
     // Parse Date Types
-    payload.data = parseDate(payload.data, ["purchaseTime", "soldTime", "warrantyExpires"]);
+    payload.data = parseDate(payload.data, ["purchaseTime", "soldTime", "warrantyExpires", "expiryDate"]);
     return payload;
   }
 
@@ -132,7 +132,7 @@ export class ItemsApi extends BaseAPI {
       return payload;
     }
 
-    payload.data = parseDate(payload.data, ["purchaseTime", "soldTime", "warrantyExpires"]);
+    payload.data = parseDate(payload.data, ["purchaseTime", "soldTime", "warrantyExpires", "expiryDate"]);
     return payload;
   }
 
@@ -146,7 +146,7 @@ export class ItemsApi extends BaseAPI {
       return resp;
     }
 
-    resp.data = parseDate(resp.data, ["purchaseTime", "soldTime", "warrantyExpires"]);
+    resp.data = parseDate(resp.data, ["purchaseTime", "soldTime", "warrantyExpires", "expiryDate"]);
     return resp;
   }
 

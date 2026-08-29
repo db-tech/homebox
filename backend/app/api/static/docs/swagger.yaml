@@ -11,6 +11,63 @@ definitions:
       symbol:
         type: string
     type: object
+  repo.ConsumptionCreate:
+    properties:
+      amount:
+        description: Amount is always positive; Type carries the direction.
+        minimum: 1
+        type: integer
+      date:
+        description: Date defaults to now when zero.
+        type: string
+      note:
+        maxLength: 500
+        type: string
+      type:
+        enum:
+        - consume
+        - restock
+        - correction
+        type: string
+    required:
+    - amount
+    - type
+    type: object
+  repo.ConsumptionEntry:
+    properties:
+      amount:
+        type: integer
+      createdAt:
+        type: string
+      date:
+        type: string
+      id:
+        type: string
+      itemId:
+        type: string
+      note:
+        type: string
+      type:
+        type: string
+    type: object
+  repo.ConsumptionSummary:
+    properties:
+      averagePerWeek:
+        description: |-
+          AveragePerWeek is the consumed amount projected onto a 7 day window
+          over the requested period. Useful to judge how long stock will last.
+        type: number
+      entries:
+        type: integer
+      itemId:
+        type: string
+      itemName:
+        type: string
+      totalConsumed:
+        type: integer
+      totalRestocked:
+        type: integer
+    type: object
   repo.DocumentOut:
     properties:
       id:
@@ -81,6 +138,12 @@ definitions:
     type: object
   repo.ItemCreate:
     properties:
+      barcode:
+        description: |-
+          Barcode lets an item be created straight from a scan, so the code is
+          registered without a second trip through the edit form.
+        maxLength: 255
+        type: string
       description:
         maxLength: 1000
         type: string
@@ -127,9 +190,16 @@ definitions:
         items:
           $ref: '#/definitions/repo.ItemAttachment'
         type: array
+      barcode:
+        type: string
       createdAt:
         type: string
       description:
+        type: string
+      expiryDate:
+        description: |-
+          Pantry - kept on the summary so list views can flag expiring and
+          low-stock items without fetching each item individually.
         type: string
       fields:
         items:
@@ -156,6 +226,8 @@ definitions:
         x-omitempty: true
       manufacturer:
         type: string
+      minStock:
+        type: integer
       modelNumber:
         type: string
       name:
@@ -222,9 +294,16 @@ definitions:
       assetId:
         example: "0"
         type: string
+      barcode:
+        type: string
       createdAt:
         type: string
       description:
+        type: string
+      expiryDate:
+        description: |-
+          Pantry - kept on the summary so list views can flag expiring and
+          low-stock items without fetching each item individually.
         type: string
       id:
         type: string
@@ -242,6 +321,8 @@ definitions:
         description: Edges
         x-nullable: true
         x-omitempty: true
+      minStock:
+        type: integer
       name:
         type: string
       purchasePrice:
@@ -265,8 +346,14 @@ definitions:
         type: boolean
       assetId:
         type: string
+      barcode:
+        maxLength: 255
+        type: string
       description:
         maxLength: 1000
+        type: string
+      expiryDate:
+        description: Pantry
         type: string
       fields:
         items:
@@ -288,6 +375,8 @@ definitions:
         type: string
       manufacturer:
         type: string
+      minStock:
+        type: integer
       modelNumber:
         type: string
       name:
@@ -700,6 +789,19 @@ definitions:
       completed:
         type: integer
     type: object
+  v1.AdminUserCreate:
+    properties:
+      email:
+        type: string
+      groupID:
+        type: string
+      isSuperuser:
+        type: boolean
+      name:
+        type: string
+      password:
+        type: string
+    type: object
   v1.Build:
     properties:
       buildTime:
@@ -751,6 +853,13 @@ definitions:
       username:
         example: admin@admin.com
         type: string
+    type: object
+  v1.Results-repo_UserOut:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/repo.UserOut'
+        type: array
     type: object
   v1.TokenResponse:
     properties:
@@ -839,6 +948,93 @@ paths:
       summary: Zero Out Time Fields
       tags:
       - Actions
+  /v1/admin/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Results-repo_UserOut'
+      security:
+      - Bearer: []
+      summary: Get All Users (Admin Only)
+      tags:
+      - Admin
+    post:
+      parameters:
+      - description: User Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.AdminUserCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  $ref: '#/definitions/repo.UserOut'
+              type: object
+      security:
+      - Bearer: []
+      summary: Create New User (Admin Only)
+      tags:
+      - Admin
+  /v1/admin/users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - Bearer: []
+      summary: Delete User (Admin Only)
+      tags:
+      - Admin
+    put:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/repo.UserUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  $ref: '#/definitions/repo.UserOut'
+              type: object
+      security:
+      - Bearer: []
+      summary: Update User (Admin Only)
+      tags:
+      - Admin
   /v1/assets/{id}:
     get:
       parameters:
@@ -859,6 +1055,24 @@ paths:
       summary: Get Item by Asset ID
       tags:
       - Items
+  /v1/consumption/{id}:
+    delete:
+      parameters:
+      - description: Consumption Entry ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - Bearer: []
+      summary: Delete a consumption log entry
+      tags:
+      - Item Consumption
   /v1/currency:
     get:
       produces:
@@ -1264,6 +1478,53 @@ paths:
       summary: Update Item Attachment
       tags:
       - Items Attachments
+  /v1/items/{id}/consumption:
+    get:
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.ConsumptionEntry'
+            type: array
+      security:
+      - Bearer: []
+      summary: Get the consumption log of an item
+      tags:
+      - Item Consumption
+    post:
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Entry Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/repo.ConsumptionCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/repo.ConsumptionEntry'
+      security:
+      - Bearer: []
+      summary: Record a stock movement for an item
+      tags:
+      - Item Consumption
   /v1/items/{id}/maintenance:
     get:
       parameters:
@@ -1860,6 +2121,86 @@ paths:
       summary: Test Notifier
       tags:
       - Notifiers
+  /v1/pantry/barcode:
+    get:
+      parameters:
+      - description: barcode to look up
+        in: query
+        name: barcode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.ItemSummary'
+            type: array
+      security:
+      - Bearer: []
+      summary: Look up items by barcode
+      tags:
+      - Pantry
+  /v1/pantry/consumption/statistics:
+    get:
+      parameters:
+      - description: period in days (default 30)
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.ConsumptionSummary'
+            type: array
+      security:
+      - Bearer: []
+      summary: Consumption statistics per item
+      tags:
+      - Pantry
+  /v1/pantry/expiring:
+    get:
+      parameters:
+      - description: days to look ahead (default 14)
+        in: query
+        name: within
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.ItemSummary'
+            type: array
+      security:
+      - Bearer: []
+      summary: Get items that expire soon
+      tags:
+      - Pantry
+  /v1/pantry/low-stock:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.ItemSummary'
+            type: array
+      security:
+      - Bearer: []
+      summary: Get items at or below their minimum stock
+      tags:
+      - Pantry
   /v1/qrcode:
     get:
       parameters:

@@ -88,6 +88,38 @@ var (
 			},
 		},
 	}
+	// ConsumptionEntriesColumns holds the columns for the "consumption_entries" table.
+	ConsumptionEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "date", Type: field.TypeTime},
+		{Name: "amount", Type: field.TypeInt},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"consume", "restock", "correction"}},
+		{Name: "note", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "item_id", Type: field.TypeUUID},
+	}
+	// ConsumptionEntriesTable holds the schema information for the "consumption_entries" table.
+	ConsumptionEntriesTable = &schema.Table{
+		Name:       "consumption_entries",
+		Columns:    ConsumptionEntriesColumns,
+		PrimaryKey: []*schema.Column{ConsumptionEntriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "consumption_entries_items_consumption_entries",
+				Columns:    []*schema.Column{ConsumptionEntriesColumns[7]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "consumptionentry_item_id_date",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionEntriesColumns[7], ConsumptionEntriesColumns[3]},
+			},
+		},
+	}
 	// DocumentsColumns holds the columns for the "documents" table.
 	DocumentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -166,6 +198,9 @@ var (
 		{Name: "serial_number", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "model_number", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "manufacturer", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "expiry_date", Type: field.TypeTime, Nullable: true},
+		{Name: "min_stock", Type: field.TypeInt, Default: 0},
+		{Name: "barcode", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "lifetime_warranty", Type: field.TypeBool, Default: false},
 		{Name: "warranty_expires", Type: field.TypeTime, Nullable: true},
 		{Name: "warranty_details", Type: field.TypeString, Nullable: true, Size: 1000},
@@ -188,19 +223,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_groups_items",
-				Columns:    []*schema.Column{ItemsColumns[25]},
+				Columns:    []*schema.Column{ItemsColumns[28]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[26]},
+				Columns:    []*schema.Column{ItemsColumns[29]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_locations_items",
-				Columns:    []*schema.Column{ItemsColumns[27]},
+				Columns:    []*schema.Column{ItemsColumns[30]},
 				RefColumns: []*schema.Column{LocationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -235,6 +270,16 @@ var (
 				Name:    "item_asset_id",
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[10]},
+			},
+			{
+				Name:    "item_barcode",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[17]},
+			},
+			{
+				Name:    "item_expiry_date",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[15]},
 			},
 		},
 	}
@@ -457,6 +502,7 @@ var (
 		AttachmentsTable,
 		AuthRolesTable,
 		AuthTokensTable,
+		ConsumptionEntriesTable,
 		DocumentsTable,
 		GroupsTable,
 		GroupInvitationTokensTable,
@@ -476,6 +522,7 @@ func init() {
 	AttachmentsTable.ForeignKeys[1].RefTable = ItemsTable
 	AuthRolesTable.ForeignKeys[0].RefTable = AuthTokensTable
 	AuthTokensTable.ForeignKeys[0].RefTable = UsersTable
+	ConsumptionEntriesTable.ForeignKeys[0].RefTable = ItemsTable
 	DocumentsTable.ForeignKeys[0].RefTable = GroupsTable
 	GroupInvitationTokensTable.ForeignKeys[0].RefTable = GroupsTable
 	ItemsTable.ForeignKeys[0].RefTable = GroupsTable
