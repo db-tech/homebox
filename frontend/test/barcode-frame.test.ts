@@ -69,7 +69,7 @@ function frameWithBarcode(
   const barsHeight = Math.round(frameHeight * 0.3);
   // Off-centre still keeps a quiet zone: EAN-13 needs clear space either side
   // or the decoder cannot find where the code starts.
-  const x0 = centred ? Math.floor((frameWidth - barsWidth) / 2) : opts.left ?? 80;
+  const x0 = centred ? Math.floor((frameWidth - barsWidth) / 2) : (opts.left ?? 80);
   const y0 = Math.floor((frameHeight - barsHeight) / 2);
 
   for (let m = 0; m < pattern.length; m++) {

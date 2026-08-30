@@ -377,6 +377,8 @@
             "expiry_quick": "Quick",
             "expiry_reads_as": "Reads as {date}",
             "expiry_unreadable": "Could not read that date - try 0327, 03.2027 or 12.03.2027",
+            "foreign_hint": "This QR code belongs to the manufacturer, not to Homebox. Scan the barcode with the bars instead.",
+            "foreign_title": "Not a Homebox label",
             "frames": "{n} frames",
             "hint": "Point the camera at a product barcode.",
             "manual_placeholder": "Or type the barcode digits",

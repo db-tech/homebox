@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
   import { decodeFrame } from "~~/lib/barcode/decode";
+  import { classifyScan } from "~~/lib/barcode/scan-target";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
   import { formatShortDate, monthsFromNow, parseShortDate } from "~~/lib/datelib/shortdate";
@@ -37,6 +38,8 @@
   const scanMode = ref<ScanMode>("restock");
 
   const scannedCode = ref<string | null>(null);
+  /** A QR code that belongs to somebody else, shown rather than followed. */
+  const foreignCode = ref<string | null>(null);
   const matches = ref<ItemSummary[]>([]);
   const suggestion = ref<ProductlookupProduct | null>(null);
   const searching = ref(false);
@@ -68,23 +71,6 @@
     console.error("Scanner error:", error);
     errorMessage.value = t("scanner.error");
   };
-
-  /**
-   * A Homebox QR code carries a URL back into this app. Anything else - a plain
-   * EAN or UPC off a product - is treated as a barcode to look up.
-   */
-  function asInternalPath(text: string): string | null {
-    let url: URL;
-    try {
-      url = new URL(text);
-    } catch {
-      return null;
-    }
-    if (!url.pathname.startsWith("/")) {
-      return null;
-    }
-    return url.pathname.replace(/[^a-zA-Z0-9-_/]/g, "");
-  }
 
   async function lookupBarcode(code: string) {
     scannedCode.value = code;
@@ -202,6 +188,7 @@
 
   function dismiss() {
     scannedCode.value = null;
+    foreignCode.value = null;
     matches.value = [];
     suggestion.value = null;
     newName.value = "";
@@ -224,12 +211,23 @@
   }
 
   async function handleScan(text: string) {
-    const path = asInternalPath(text);
-    if (path) {
-      navigateTo(path);
-      return;
+    const target = classifyScan(text, window.location.origin);
+
+    switch (target.kind) {
+      case "internal":
+        navigateTo(target.path);
+        return;
+      case "foreign":
+        // Packaging often carries a manufacturer's QR code right next to the
+        // barcode. Following its path into Homebox lands on a route that does
+        // not exist, so show what was read instead of jumping somewhere.
+        scannedCode.value = null;
+        foreignCode.value = target.value;
+        return;
+      case "code":
+        foreignCode.value = null;
+        await lookupBarcode(target.value);
     }
-    await lookupBarcode(text);
   }
 
   // ---------------------------------------------------------------------------
@@ -319,7 +317,7 @@
 
     const el = video.value;
 
-    if (el.readyState >= 2 && el.videoWidth > 0 && !scannedCode.value && !busy.value) {
+    if (el.readyState >= 2 && el.videoWidth > 0 && !scannedCode.value && !foreignCode.value && !busy.value) {
       framesTried.value++;
       try {
         let found: string | null = null;
@@ -481,6 +479,18 @@
             </summary>
             <p class="mt-1 opacity-80">{{ $t("pantry.scan.tips") }}</p>
           </details>
+
+          <!-- A QR code from the packaging rather than one of our labels -->
+          <BaseCard v-if="foreignCode" class="mt-6">
+            <template #title>{{ $t("pantry.scan.foreign_title") }}</template>
+            <div class="border-t border-gray-300 p-4">
+              <p class="text-sm">{{ $t("pantry.scan.foreign_hint") }}</p>
+              <p class="mt-2 break-all rounded bg-base-200 p-2 text-xs">{{ foreignCode }}</p>
+              <div class="mt-4 flex justify-end">
+                <BaseButton size="sm" @click="dismiss">{{ $t("pantry.scan.continue_scanning") }}</BaseButton>
+              </div>
+            </div>
+          </BaseCard>
 
           <BaseCard v-if="scannedCode" class="mt-6">
             <template #title>{{ $t("pantry.scan.title") }}</template>
