@@ -171,6 +171,30 @@ being precise about what that means:
 Set `HBOX_OPTIONS_PRODUCT_LOOKUP=false` to switch it off entirely. Every scan
 then stays on your own server.
 
+### Using a handheld scanner
+
+The camera is not the only option. A USB or Bluetooth barcode scanner — the
+pistol-grip kind used at a supermarket till — works here with no setup at all.
+
+Such a scanner presents itself to the phone or tablet as a **keyboard**: it
+types the digits of the code and presses Enter. The scanner page watches for
+that and treats it exactly like a camera read, so lookups, counting up and
+creating new items all behave the same.
+
+- **Pairing** is done in the device's Bluetooth settings, like any keyboard. USB
+  models work on Android through an OTG adapter.
+- The scanner must **send Enter after each scan**. That is the default on most
+  models; if not, the manual has a configuration barcode for it.
+- Typing into a text field is never intercepted, so a scan fired while you are
+  editing a name lands in that field where you can see and correct it.
+- Once a handheld scan is recognised the page says so, and you can **turn the
+  camera off** to save battery and screen space.
+
+One thing worth knowing: while a Bluetooth keyboard is connected, Android and
+iPadOS usually hide the on-screen keyboard. That is mostly welcome here — the
+date is chosen by tapping and product names are filled in from the lookup — but
+it does make correcting a name awkward until the scanner is disconnected.
+
 ### Registering a barcode by hand
 
 You can also type a barcode into an item's **Pantry** card in the edit form. The

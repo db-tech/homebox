@@ -378,6 +378,9 @@
         },
         "scan": {
             "added_one": "Ein {name} hinzugefügt",
+            "camera_off_hint": "Kamera aus. Ein Handscanner funktioniert weiterhin, Ziffern eintippen auch.",
+            "camera_turn_off": "Kamera aus",
+            "camera_turn_on": "Kamera an",
             "continue_scanning": "Weiterscannen",
             "create_and_continue": "Anlegen und weiterscannen",
             "create_failed": "Eintrag konnte nicht angelegt werden",
@@ -390,6 +393,8 @@
             "foreign_hint": "Dieser QR-Code gehört dem Hersteller, nicht Homebox. Scann stattdessen den Strichcode.",
             "foreign_title": "Kein Homebox-Etikett",
             "frames": "{n} Bilder",
+            "handheld_detected": "Handscanner erkannt",
+            "handheld_help": "Ein USB- oder Bluetooth-Barcodescanner funktioniert hier ohne Einrichtung: er meldet sich am Gerät als Tastatur an, und diese Seite liest mit was er tippt. Er sollte nach jedem Scan Enter senden, was meist voreingestellt ist. Mit angeschlossenem Scanner kannst du die Kamera ausschalten.",
             "hint": "Kamera auf den Barcode des Produkts halten.",
             "manual_placeholder": "Oder Barcode-Ziffern eintippen",
             "manual_submit": "Suchen",

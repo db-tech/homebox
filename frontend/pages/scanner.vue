@@ -2,6 +2,7 @@
   import { useI18n } from "vue-i18n";
   import { decodeFrame } from "~~/lib/barcode/decode";
   import { classifyScan } from "~~/lib/barcode/scan-target";
+  import { WedgeReader, isEditingTarget } from "~~/lib/barcode/wedge";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
   import MdiMinus from "~icons/mdi/minus";
@@ -360,6 +361,10 @@
   }
 
   onMounted(async () => {
+    if (!cameraOn.value) {
+      return;
+    }
+
     // Prefer the browser's own detector where it exists. It is the same
     // machinery a native scanner app uses and is dramatically more forgiving
     // than decoding frames in JavaScript.
@@ -380,6 +385,53 @@
 
     await startCamera();
   });
+
+  // ---------------------------------------------------------------------------
+  // Handheld scanner
+  //
+  // A USB or Bluetooth scanner appears to the device as a keyboard: it types
+  // the code and presses Enter. Nothing has to be paired with the app, so this
+  // only has to recognise machine-speed typing and route it through the same
+  // path as a camera read.
+  // ---------------------------------------------------------------------------
+
+  const wedge = new WedgeReader();
+  /** Set once a handheld scanner has been used, to offer turning the camera off. */
+  const wedgeSeen = ref(false);
+
+  // With a handheld scanner the camera is dead weight: it drains the battery
+  // and occupies the screen with a picture nobody looks at.
+  const cameraOn = ref(true);
+  watch(cameraOn, on => (on ? startCamera() : stopCamera()));
+
+  function onKeyDown(event: KeyboardEvent) {
+    // Keys typed into a field belong to that field. A scan fired while a text
+    // box has focus lands there visibly, which is correctable; silently taking
+    // what somebody is writing would not be.
+    if (isEditingTarget(event.target)) {
+      return;
+    }
+
+    const code = wedge.push(event.key, event.timeStamp);
+    if (!code) {
+      return;
+    }
+
+    event.preventDefault();
+    wedgeSeen.value = true;
+
+    if (!busy.value) {
+      busy.value = true;
+      handleScan(code)
+        .catch(handleError)
+        .finally(() => {
+          busy.value = false;
+        });
+    }
+  }
+
+  onMounted(() => window.addEventListener("keydown", onKeyDown));
+  onBeforeUnmount(() => window.removeEventListener("keydown", onKeyDown));
 
   onBeforeUnmount(stopCamera);
 
@@ -422,10 +474,27 @@
                own resolution, not on how large it is drawn. It shrinks further
                while a result is open so the form fits on one screen. -->
           <div
+            v-show="cameraOn"
             class="rounded-box overflow-hidden shadow-lg transition-[height] duration-200"
             :class="resultOpen ? 'h-[20vh]' : 'h-[32vh]'"
           >
             <video ref="video" class="size-full object-cover" poster="data:image/gif,AAAA"></video>
+          </div>
+
+          <div
+            v-if="!cameraOn"
+            class="rounded-box border border-dashed border-gray-300 p-4 text-center text-sm opacity-70"
+          >
+            {{ $t("pantry.scan.camera_off_hint") }}
+          </div>
+
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <button type="button" class="btn btn-ghost btn-xs" @click="cameraOn = !cameraOn">
+              {{ cameraOn ? $t("pantry.scan.camera_turn_off") : $t("pantry.scan.camera_turn_on") }}
+            </button>
+            <span v-if="wedgeSeen" class="badge badge-success badge-sm">
+              {{ $t("pantry.scan.handheld_detected") }}
+            </span>
           </div>
 
           <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -482,6 +551,7 @@
             </select>
 
             <p class="mt-3 text-xs opacity-80">{{ $t("pantry.scan.tips") }}</p>
+            <p class="mt-2 text-xs opacity-80">{{ $t("pantry.scan.handheld_help") }}</p>
 
             <p class="mt-2 text-xs opacity-60">
               <span v-if="engine">{{ $t("pantry.scan.engine_" + engine) }}</span>

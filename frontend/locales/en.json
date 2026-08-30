@@ -378,6 +378,9 @@
         },
         "scan": {
             "added_one": "Added one {name} to stock",
+            "camera_off_hint": "Camera off. A handheld scanner still works, and so does typing the digits.",
+            "camera_turn_off": "Turn camera off",
+            "camera_turn_on": "Turn camera on",
             "continue_scanning": "Keep scanning",
             "create_and_continue": "Create and keep scanning",
             "create_failed": "Could not create the item",
@@ -390,6 +393,8 @@
             "foreign_hint": "This QR code belongs to the manufacturer, not to Homebox. Scan the barcode with the bars instead.",
             "foreign_title": "Not a Homebox label",
             "frames": "{n} frames",
+            "handheld_detected": "Handheld scanner detected",
+            "handheld_help": "A USB or Bluetooth barcode scanner works here without any setup: it appears to the device as a keyboard, and this page reads what it types. Set it to send Enter after each scan, which is usually the default. With one connected you can turn the camera off.",
             "hint": "Point the camera at a product barcode.",
             "manual_placeholder": "Or type the barcode digits",
             "manual_submit": "Look up",
