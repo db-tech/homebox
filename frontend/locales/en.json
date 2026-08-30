@@ -15,6 +15,20 @@
                 "new_version_available_link": "Click here to view the release notes"
             }
         },
+        "form": {
+            "date_picker": {
+                "apply": "Apply",
+                "back": "Back",
+                "change": "Change",
+                "month_end": "No day given (end of month)",
+                "month_end_short": "end",
+                "step_day": "Day",
+                "step_month": "Month",
+                "step_year": "Year",
+                "tap_instead": "tap it instead",
+                "type_instead": "type it instead"
+            }
+        },
         "global": {
             "copy_text": {
                 "documentation": "documentation",
@@ -371,10 +385,7 @@
             "created": "{name} added",
             "engine_native": "Native detector",
             "engine_zxing": "JS decoder",
-            "expiry_clear": "none",
             "expiry_placeholder": "Best before, e.g. 0327",
-            "expiry_quick": "Quick",
-            "expiry_reads_as": "Reads as {date}",
             "expiry_unreadable": "Could not read that date - try 0327, 03.2027 or 12.03.2027",
             "foreign_hint": "This QR code belongs to the manufacturer, not to Homebox. Scan the barcode with the bars instead.",
             "foreign_title": "Not a Homebox label",

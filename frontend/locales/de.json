@@ -15,6 +15,20 @@
                 "new_version_available_link": "Klicken Sie hier, um die Release Notes anzuzeigen"
             }
         },
+        "form": {
+            "date_picker": {
+                "apply": "Übernehmen",
+                "back": "Zurück",
+                "change": "Ändern",
+                "month_end": "Kein Tag angegeben (Monatsende)",
+                "month_end_short": "Ende",
+                "step_day": "Tag",
+                "step_month": "Monat",
+                "step_year": "Jahr",
+                "tap_instead": "lieber antippen",
+                "type_instead": "lieber eintippen"
+            }
+        },
         "global": {
             "copy_text": {
                 "documentation": "Dokumentation",
@@ -371,10 +385,7 @@
             "created": "{name} angelegt",
             "engine_native": "Systemerkennung",
             "engine_zxing": "JS-Decoder",
-            "expiry_clear": "keins",
             "expiry_placeholder": "MHD, z.B. 0327",
-            "expiry_quick": "Schnell",
-            "expiry_reads_as": "Wird gelesen als {date}",
             "expiry_unreadable": "Datum nicht lesbar - versuch 0327, 03.2027 oder 12.03.2027",
             "foreign_hint": "Dieser QR-Code gehört dem Hersteller, nicht Homebox. Scann stattdessen den Strichcode.",
             "foreign_title": "Kein Homebox-Etikett",

@@ -4,7 +4,6 @@
   import { classifyScan } from "~~/lib/barcode/scan-target";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
-  import { formatShortDate, monthsFromNow, parseShortDate } from "~~/lib/datelib/shortdate";
   import MdiMinus from "~icons/mdi/minus";
   import MdiPlus from "~icons/mdi/plus";
   import MdiOpenInNew from "~icons/mdi/open-in-new";
@@ -67,15 +66,8 @@
   // entered here rather than left for a second pass through the edit form.
   // The field takes the short forms printed on packaging: 0327, 03.27, 03/2027,
   // 12.03.2027 - see lib/datelib/shortdate.
-  const newExpiry = ref("");
+  const newExpiryDate = ref<Date | null>(null);
   const newMinStock = ref<number | null>(null);
-
-  const parsedExpiry = computed(() => parseShortDate(newExpiry.value));
-  const expiryLooksWrong = computed(() => newExpiry.value.trim() !== "" && parsedExpiry.value === null);
-
-  function setExpiryMonths(months: number) {
-    newExpiry.value = formatShortDate(monthsFromNow(months));
-  }
 
   const showNewItemForm = computed(() => !!scannedCode.value && !searching.value && matches.value.length === 0);
 
@@ -89,7 +81,7 @@
     matches.value = [];
     suggestion.value = null;
     newName.value = "";
-    newExpiry.value = "";
+    newExpiryDate.value = null;
     searching.value = true;
 
     const { data, error } = await api.pantry.scan(code);
@@ -169,13 +161,6 @@
       return;
     }
 
-    // Refuse rather than silently store a date we could not read - a wrong
-    // best-before date is worse than none.
-    if (expiryLooksWrong.value) {
-      toast.error(t("pantry.scan.expiry_unreadable"));
-      return;
-    }
-
     creating.value = true;
     const { data, error } = await api.items.create({
       parentId: null,
@@ -184,7 +169,7 @@
       locationId: location.value.id,
       labelIds: [],
       barcode: scannedCode.value,
-      expiryDate: parsedExpiry.value ?? "",
+      expiryDate: newExpiryDate.value ?? "",
       minStock: newMinStock.value ?? 0,
     });
     creating.value = false;
@@ -204,7 +189,7 @@
     matches.value = [];
     suggestion.value = null;
     newName.value = "";
-    newExpiry.value = "";
+    newExpiryDate.value = null;
     // The minimum stock is deliberately kept: a whole box of tins usually wants
     // the same one, and re-typing it per item is the sort of friction this
     // screen exists to remove.
@@ -540,46 +525,19 @@
                     maxlength="255"
                   />
 
-                  <div class="flex flex-wrap gap-2">
-                    <div class="min-w-40 grow">
-                      <input
-                        v-model="newExpiry"
-                        type="text"
-                        inputmode="numeric"
-                        class="input input-bordered w-full"
-                        :class="expiryLooksWrong ? 'input-error' : ''"
-                        :placeholder="$t('pantry.scan.expiry_placeholder')"
-                      />
-                      <p v-if="expiryLooksWrong" class="mt-1 text-xs text-error">
-                        {{ $t("pantry.scan.expiry_unreadable") }}
-                      </p>
-                      <p v-else-if="parsedExpiry" class="mt-1 text-xs">
-                        {{
-                          $t("pantry.scan.expiry_reads_as", {
-                            date: formatShortDate(parsedExpiry),
-                          })
-                        }}
-                      </p>
-                    </div>
-                    <div class="w-28">
-                      <input
-                        v-model.number="newMinStock"
-                        type="number"
-                        min="0"
-                        class="input input-bordered w-full"
-                        :placeholder="$t('items.min_stock')"
-                      />
-                    </div>
+                  <div>
+                    <p class="mb-1 text-xs opacity-70">{{ $t("items.expiry_date") }}</p>
+                    <FormDateTapPicker v-model="newExpiryDate" />
                   </div>
 
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs">{{ $t("pantry.scan.expiry_quick") }}:</span>
-                    <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(6)">+6 M</button>
-                    <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(12)">+1 J</button>
-                    <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(24)">+2 J</button>
-                    <button type="button" class="btn btn-ghost btn-xs" @click="newExpiry = ''">
-                      {{ $t("pantry.scan.expiry_clear") }}
-                    </button>
+                  <div class="w-28">
+                    <input
+                      v-model.number="newMinStock"
+                      type="number"
+                      min="0"
+                      class="input input-bordered w-full"
+                      :placeholder="$t('items.min_stock')"
+                    />
                   </div>
 
                   <div class="flex flex-wrap justify-end gap-2">

@@ -115,10 +115,23 @@ rhythm.
 The minimum stock stays filled in between items, since a box of tins usually
 wants the same one. The date does not, because it differs per product.
 
-### Typing a best-before date quickly
+### Entering a best-before date
 
-Packaging prints dates like `03.2027` or `MHD 03/27`. The date field takes them
-as they are, so you can type four digits and move on:
+The date is entered by tapping, not typing: on a phone the keyboard covers half
+the screen for the sake of four digits. Three taps and you are done.
+
+1. **Day** — the numbers 1 to 31. Most packaging gives no day, so there is a
+   **No day given (end of month)** button that skips straight past this.
+2. **Month** — 1 to 12.
+3. **Year** — this year and the next five.
+
+**Back** returns one step if you hit the wrong number, and the part chosen so
+far is shown as you go. A day that the chosen month does not have — 31 followed
+by February — resolves to the end of that month rather than spilling into the
+next one.
+
+If you would rather type, **type it instead** switches to a text field that
+takes the short forms printed on packaging:
 
 | You type | Homebox stores |
 | --- | --- |
@@ -133,9 +146,6 @@ A month without a day resolves to the **last day of that month**, which is what
 "mindestens haltbar bis Ende März" means. The field shows how it read your input
 before you commit, and refuses to save anything it could not parse — a wrong
 best-before date is worse than none.
-
-The `+6 M`, `+1 J` and `+2 J` buttons fill in a rough date for things where the
-packaging has none.
 
 Scan six identical tins and you type once: the first creates the item, the other
 five each add one to it. You never enter a quantity by hand.

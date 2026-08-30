@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatShortDate, monthsFromNow, parseShortDate } from "./shortdate";
+import { assembleDate, formatShortDate, monthsFromNow, parseShortDate, pickableYears } from "./shortdate";
 
 /** Helper: assert a parsed date matches y/m/d without timezone noise. */
 function expectDate(got: Date | null, year: number, month: number, day: number) {
@@ -115,5 +115,51 @@ describe("monthsFromNow", () => {
       const got = monthsFromNow(offset % 37);
       expect(got.getDate()).toBe(new Date(got.getFullYear(), got.getMonth() + 1, 0).getDate());
     }
+  });
+});
+
+describe("assembleDate", () => {
+  test("builds the chosen day", () => {
+    expectDate(assembleDate(2027, 3, 12), 2027, 3, 12);
+  });
+
+  test("a missing day means the end of the month", () => {
+    expectDate(assembleDate(2027, 3, null), 2027, 3, 31);
+    expectDate(assembleDate(2027, 2, null), 2027, 2, 28);
+    expectDate(assembleDate(2028, 2, null), 2028, 2, 29);
+  });
+
+  // The picker asks for the day before the month, so an impossible pair has to
+  // resolve to something sensible rather than roll into the next month.
+  test("a day the month does not have is clamped, not rolled over", () => {
+    expectDate(assembleDate(2027, 2, 31), 2027, 2, 28);
+    expectDate(assembleDate(2028, 2, 30), 2028, 2, 29);
+    expectDate(assembleDate(2027, 4, 31), 2027, 4, 30);
+  });
+
+  test("valid days are left alone", () => {
+    expectDate(assembleDate(2027, 1, 31), 2027, 1, 31);
+    expectDate(assembleDate(2028, 2, 29), 2028, 2, 29);
+  });
+
+  test("never returns a date outside the chosen month", () => {
+    for (let m = 1; m <= 12; m++) {
+      for (let d = 1; d <= 31; d++) {
+        const got = assembleDate(2027, m, d);
+        expect(got.getMonth() + 1).toBe(m);
+        expect(got.getFullYear()).toBe(2027);
+      }
+    }
+  });
+});
+
+describe("pickableYears", () => {
+  test("starts at the given year and runs forward", () => {
+    expect(pickableYears(5, new Date(2026, 7, 30))).toEqual([2026, 2027, 2028, 2029, 2030, 2031]);
+  });
+
+  test("always includes the current year first", () => {
+    const years = pickableYears();
+    expect(years[0]).toBe(new Date().getFullYear());
   });
 });

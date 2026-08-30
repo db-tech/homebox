@@ -112,3 +112,30 @@ export function monthsFromNow(months: number): Date {
   const now = new Date();
   return lastDayOfMonth(now.getFullYear(), now.getMonth() + 1 + months);
 }
+
+/**
+ * Builds a date from separately chosen parts, as the tap picker collects them.
+ *
+ * `day` may be null, meaning the packaging gave only a month - which is the
+ * usual case on tins. That resolves to the last day of the month, the same
+ * reading as "mindestens haltbar bis Ende Maerz".
+ *
+ * A day that does not exist in the chosen month is clamped to the month end
+ * rather than rejected. The picker cannot know the month while the day is being
+ * chosen, so 31 followed by February has to resolve to something sensible.
+ */
+export function assembleDate(year: number, month: number, day: number | null): Date {
+  const end = lastDayOfMonth(year, month);
+
+  if (day === null) {
+    return end;
+  }
+
+  return new Date(year, month - 1, Math.min(day, end.getDate()));
+}
+
+/** The years offered by the picker: this year and the next `ahead` ones. */
+export function pickableYears(ahead = 5, from: Date = new Date()): number[] {
+  const start = from.getFullYear();
+  return Array.from({ length: ahead + 1 }, (_, i) => start + i);
+}
