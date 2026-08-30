@@ -101,10 +101,17 @@
     }
 
     if (matches.value.length === 0) {
-      // Straight into typing: the suggestion is a starting point, not a verdict.
-      newName.value = buildSuggestedName(data.suggestion);
-      await nextTick();
-      nameInput.value?.focus();
+      const suggested = buildSuggestedName(data.suggestion);
+      newName.value = suggested;
+
+      // Only pull the keyboard up when there is actually something to type.
+      // With a name already supplied by the product lookup the field is done,
+      // and focusing it just buries the rest of the form under the keyboard.
+      // The field stays editable - it simply has to be tapped to change it.
+      if (!suggested) {
+        await nextTick();
+        nameInput.value?.focus();
+      }
     }
   }
 
