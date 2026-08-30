@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { BarcodeFormat, BrowserMultiFormatReader, DecodeHintType, NotFoundException } from "@zxing/library";
   import { useI18n } from "vue-i18n";
+  import { decodeFrame } from "~~/lib/barcode/decode";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
   import { formatShortDate, monthsFromNow, parseShortDate } from "~~/lib/datelib/shortdate";
@@ -23,29 +23,13 @@
   const selectedSource = ref<string | null>(null);
   const busy = ref(false);
   const video = ref<HTMLVideoElement>();
-  // Restricted to the formats that actually occur here: the 1D codes on
-  // packaging plus QR for Homebox's own labels. Fewer formats means each frame
-  // is cheaper, so more frames get tried per second.
-  const hints = new Map();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.UPC_A,
-    BarcodeFormat.UPC_E,
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.ITF,
-    BarcodeFormat.QR_CODE,
-  ]);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-
-  // The default is 500ms, which is only two attempts per second - far too slow
-  // to catch a hand-held barcode drifting through focus.
-  const codeReader = new BrowserMultiFormatReader(hints, 150);
   const errorMessage = ref<string | null>(null);
 
-  /** Negotiated capture size, shown so a too-small stream is visible, not silent. */
+  /** Diagnostics, shown on the page so a failure can be read out rather than guessed at. */
   const captureSize = ref<string | null>(null);
+  const engine = ref<"native" | "zxing" | null>(null);
+  const framesTried = ref(0);
+  const lastEngineError = ref<string | null>(null);
   const manualCode = ref("");
 
   /** What to do automatically once a barcode resolves to exactly one item. */
@@ -248,88 +232,157 @@
     await lookupBarcode(text);
   }
 
-  onMounted(async () => {
-    if (!(navigator && navigator.mediaDevices && "enumerateDevices" in navigator.mediaDevices)) {
+  // ---------------------------------------------------------------------------
+  // Camera
+  //
+  // The stream is acquired and attached by hand rather than through zxing's
+  // browser helpers. Those create their own hidden 200x200 video element when
+  // they are handed anything but a live element, which silently guarantees an
+  // unreadable picture, and they hide the capture size so a bad stream looks
+  // like "nothing happens".
+  // ---------------------------------------------------------------------------
+
+  let stream: MediaStream | null = null;
+  let loopHandle: number | null = null;
+  let detector: { detect: (src: CanvasImageSource) => Promise<Array<{ rawValue: string }>> } | null = null;
+  const canvas = document.createElement("canvas");
+
+  function stopCamera() {
+    if (loopHandle !== null) {
+      window.clearTimeout(loopHandle);
+      loopHandle = null;
+    }
+    stream?.getTracks().forEach(t => t.stop());
+    stream = null;
+    if (video.value) {
+      video.value.srcObject = null;
+    }
+  }
+
+  async function startCamera() {
+    stopCamera();
+    captureSize.value = null;
+    framesTried.value = 0;
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
       errorMessage.value = t("scanner.unsupported");
       return;
     }
 
+    // A barcode needs a few hundred pixels across to decode at all, so the
+    // resolution is asked for explicitly. Without this the browser hands back
+    // whatever it likes, commonly 640x480, which is not enough at arm's length.
+    const constraints: MediaStreamConstraints = {
+      video: {
+        ...(selectedSource.value
+          ? { deviceId: { exact: selectedSource.value } }
+          : { facingMode: { ideal: "environment" } }),
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+    };
+
     try {
-      const devices = await codeReader.listVideoInputDevices();
-      sources.value = devices;
-
-      if (devices.length === 0) {
-        errorMessage.value = t("scanner.no_sources");
-        return;
-      }
-
-      // Only pick a device when its label positively identifies a rear camera.
-      // enumerateDevices returns empty labels until camera permission has been
-      // granted, and blindly taking the first entry then selects the front
-      // camera on most phones. Leaving this null keeps the stream on
-      // facingMode: environment, which the browser resolves correctly.
-      const rear = devices.find(d => /back|rear|environment|rück/i.test(d.label));
-      if (rear) {
-        selectedSource.value = rear.deviceId;
-      }
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (err) {
       handleError(err);
+      return;
     }
+
+    if (!video.value) {
+      return;
+    }
+
+    video.value.srcObject = stream;
+    video.value.setAttribute("playsinline", "true");
+    video.value.muted = true;
+    await video.value.play().catch(handleError);
+
+    const settings = stream.getVideoTracks()[0]?.getSettings();
+    captureSize.value = `${settings?.width ?? video.value.videoWidth}\u00D7${settings?.height ?? video.value.videoHeight}`;
+
+    // Now that permission has been granted the device labels are populated, so
+    // the picker can finally show something meaningful.
+    try {
+      sources.value = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+    } catch {
+      // A missing device list is not worth failing the scan over.
+    }
+
+    scanLoop();
+  }
+
+  async function scanLoop() {
+    if (!stream || !video.value) {
+      return;
+    }
+
+    const el = video.value;
+
+    if (el.readyState >= 2 && el.videoWidth > 0 && !scannedCode.value && !busy.value) {
+      framesTried.value++;
+      try {
+        let found: string | null = null;
+
+        if (detector) {
+          // The native detector is what a phone's own scanner app uses: it runs
+          // outside JavaScript and copes with far smaller and blurrier codes.
+          const hits = await detector.detect(el);
+          found = hits[0]?.rawValue ?? null;
+        } else {
+          canvas.width = el.videoWidth;
+          canvas.height = el.videoHeight;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          if (ctx) {
+            ctx.drawImage(el, 0, 0);
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            found = decodeFrame(frame.data, canvas.width, canvas.height);
+          }
+        }
+
+        if (found) {
+          busy.value = true;
+          errorMessage.value = null;
+          await handleScan(found).catch(handleError);
+          window.setTimeout(() => {
+            busy.value = false;
+          }, 800);
+        }
+      } catch (err) {
+        // A single bad frame must not stop the loop.
+        lastEngineError.value = err instanceof Error ? err.message : String(err);
+      }
+    }
+
+    loopHandle = window.setTimeout(scanLoop, 120);
+  }
+
+  onMounted(async () => {
+    // Prefer the browser's own detector where it exists. It is the same
+    // machinery a native scanner app uses and is dramatically more forgiving
+    // than decoding frames in JavaScript.
+    const w = window as unknown as { BarcodeDetector?: new (o?: unknown) => typeof detector };
+    if (w.BarcodeDetector) {
+      try {
+        detector = new w.BarcodeDetector({
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "qr_code"],
+        }) as typeof detector;
+        engine.value = "native";
+      } catch {
+        detector = null;
+      }
+    }
+    if (!detector) {
+      engine.value = "zxing";
+    }
+
+    await startCamera();
   });
 
-  onBeforeUnmount(() => codeReader.reset());
+  onBeforeUnmount(stopCamera);
 
-  watch(
-    selectedSource,
-    async newSource => {
-      codeReader.reset();
-      captureSize.value = null;
-
-      // decodeFromVideoDevice asks for a camera and nothing else, so the browser
-      // hands back whatever it likes - often 640x480. An EAN-13 needs roughly 250
-      // pixels of width in the captured frame to decode at all, which that does
-      // not give unless the can is almost touching the lens. Asking for a high
-      // resolution stream is what makes scanning work at a normal distance.
-      const constraints: MediaStreamConstraints = {
-        video: {
-          ...(newSource ? { deviceId: { exact: newSource } } : { facingMode: { ideal: "environment" } }),
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      };
-
-      try {
-        await codeReader.decodeFromConstraints(constraints, video.value!, (result, err) => {
-          if (!captureSize.value && video.value?.videoWidth) {
-            captureSize.value = `${video.value.videoWidth}\u00D7${video.value.videoHeight}`;
-          }
-          // While a result is on screen the camera keeps running but is ignored,
-          // so typing a name is not interrupted by the next frame.
-          if (result && !busy.value && !scannedCode.value) {
-            busy.value = true;
-            errorMessage.value = null;
-
-            handleScan(result.getText())
-              .catch(handleError)
-              .finally(() => {
-                setTimeout(() => {
-                  busy.value = false;
-                }, 800);
-              });
-          }
-          if (err && !(err instanceof NotFoundException)) {
-            console.error(err);
-            handleError(err);
-          }
-        });
-      } catch (err) {
-        handleError(err);
-      }
-    },
-    // Runs on mount as well, so the camera starts on facingMode: environment
-    // before the device list has resolved.
-    { immediate: true }
-  );
+  // Only restart when the user actively picks a different camera.
+  watch(selectedSource, () => startCamera());
 </script>
 
 <template>
@@ -364,9 +417,14 @@
 
           <video ref="video" class="rounded-box shadow-lg" poster="data:image/gif,AAAA"></video>
 
-          <p v-if="captureSize" class="mt-1 text-right text-xs opacity-60">
-            {{ $t("pantry.scan.capture_size", { size: captureSize }) }}
+          <!-- Visible diagnostics: if scanning fails, this can be read out
+               instead of guessed at. -->
+          <p class="mt-1 text-right text-xs opacity-60">
+            <span v-if="engine">{{ $t("pantry.scan.engine_" + engine) }}</span>
+            <span v-if="captureSize"> &middot; {{ captureSize }}</span>
+            <span v-if="framesTried"> &middot; {{ $t("pantry.scan.frames", { n: framesTried }) }}</span>
           </p>
+          <p v-if="lastEngineError" class="text-right text-xs text-error">{{ lastEngineError }}</p>
 
           <form class="mt-3 flex gap-2" @submit.prevent="submitManual">
             <input
