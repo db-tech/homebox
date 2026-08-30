@@ -40,6 +40,18 @@
   const scannedCode = ref<string | null>(null);
   /** A QR code that belongs to somebody else, shown rather than followed. */
   const foreignCode = ref<string | null>(null);
+  const resultAnchor = ref<HTMLElement | null>(null);
+
+  /** True while a scan result or the new-item form is on screen. */
+  const resultOpen = computed(() => !!scannedCode.value || !!foreignCode.value);
+
+  // A result appearing below the fold is the same problem as a preview that is
+  // too tall, so bring it into view rather than expecting a scroll.
+  watch(resultOpen, async open => {
+    if (!open) return;
+    await nextTick();
+    resultAnchor.value?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
   const matches = ref<ItemSummary[]>([]);
   const suggestion = ref<ProductlookupProduct | null>(null);
   const searching = ref(false);
@@ -384,7 +396,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-12 pb-16">
+  <div class="flex flex-col gap-4 pb-8">
     <section>
       <div class="mx-auto">
         <div class="max-w-screen-md">
@@ -413,40 +425,18 @@
             </p>
           </div>
 
-          <video ref="video" class="rounded-box shadow-lg" poster="data:image/gif,AAAA"></video>
+          <!-- The preview is capped so the fields below stay reachable without
+               scrolling. It only affects display: decoding works on the video's
+               own resolution, not on how large it is drawn. It shrinks further
+               while a result is open so the form fits on one screen. -->
+          <div
+            class="rounded-box overflow-hidden shadow-lg transition-[height] duration-200"
+            :class="resultOpen ? 'h-[20vh]' : 'h-[32vh]'"
+          >
+            <video ref="video" class="size-full object-cover" poster="data:image/gif,AAAA"></video>
+          </div>
 
-          <!-- Visible diagnostics: if scanning fails, this can be read out
-               instead of guessed at. -->
-          <p class="mt-1 text-right text-xs opacity-60">
-            <span v-if="engine">{{ $t("pantry.scan.engine_" + engine) }}</span>
-            <span v-if="captureSize"> &middot; {{ captureSize }}</span>
-            <span v-if="framesTried"> &middot; {{ $t("pantry.scan.frames", { n: framesTried }) }}</span>
-          </p>
-          <p v-if="lastEngineError" class="text-right text-xs text-error">{{ lastEngineError }}</p>
-
-          <form class="mt-3 flex gap-2" @submit.prevent="submitManual">
-            <input
-              v-model="manualCode"
-              type="text"
-              inputmode="numeric"
-              class="input input-bordered grow"
-              :placeholder="$t('pantry.scan.manual_placeholder')"
-            />
-            <BaseButton type="submit" size="sm" :disabled="!manualCode.trim()">
-              {{ $t("pantry.scan.manual_submit") }}
-            </BaseButton>
-          </form>
-
-          <select v-model="selectedSource" class="select mt-4 w-full shadow-lg">
-            <option disabled selected :value="null">
-              {{ t("scanner.select_video_source") }}
-            </option>
-            <option v-for="source in sources" :key="source.deviceId" :value="source.deviceId">
-              {{ source.label }}
-            </option>
-          </select>
-
-          <div class="mt-4 flex flex-wrap items-center gap-2">
+          <div class="mt-3 flex flex-wrap items-center gap-2">
             <span class="text-sm">{{ $t("pantry.scan.mode") }}:</span>
             <button
               class="btn btn-xs"
@@ -471,154 +461,176 @@
             </button>
           </div>
 
-          <p class="mt-2 text-xs">{{ $t("pantry.scan.hint") }}</p>
+          <!-- Everything that is set once, looked at rarely, or only needed when
+               something goes wrong. Folded away so the scan loop stays on one
+               screen on a phone. -->
+          <details class="mt-3 text-sm">
+            <summary class="cursor-pointer">{{ $t("pantry.scan.more") }}</summary>
 
-          <details class="mt-2 text-xs">
-            <summary class="cursor-pointer">
-              {{ $t("pantry.scan.tips_title") }}
-            </summary>
-            <p class="mt-1 opacity-80">{{ $t("pantry.scan.tips") }}</p>
+            <form class="mt-3 flex gap-2" @submit.prevent="submitManual">
+              <input
+                v-model="manualCode"
+                type="text"
+                inputmode="numeric"
+                class="input input-bordered input-sm grow"
+                :placeholder="$t('pantry.scan.manual_placeholder')"
+              />
+              <BaseButton type="submit" size="sm" :disabled="!manualCode.trim()">
+                {{ $t("pantry.scan.manual_submit") }}
+              </BaseButton>
+            </form>
+
+            <select v-model="selectedSource" class="select select-sm mt-3 w-full">
+              <option disabled selected :value="null">
+                {{ t("scanner.select_video_source") }}
+              </option>
+              <option v-for="source in sources" :key="source.deviceId" :value="source.deviceId">
+                {{ source.label }}
+              </option>
+            </select>
+
+            <p class="mt-3 text-xs opacity-80">{{ $t("pantry.scan.tips") }}</p>
+
+            <p class="mt-2 text-xs opacity-60">
+              <span v-if="engine">{{ $t("pantry.scan.engine_" + engine) }}</span>
+              <span v-if="captureSize"> &middot; {{ captureSize }}</span>
+              <span v-if="framesTried"> &middot; {{ $t("pantry.scan.frames", { n: framesTried }) }}</span>
+            </p>
+            <p v-if="lastEngineError" class="text-xs text-error">{{ lastEngineError }}</p>
           </details>
 
-          <!-- A QR code from the packaging rather than one of our labels -->
-          <BaseCard v-if="foreignCode" class="mt-6">
-            <template #title>{{ $t("pantry.scan.foreign_title") }}</template>
-            <div class="border-t border-gray-300 p-4">
-              <p class="text-sm">{{ $t("pantry.scan.foreign_hint") }}</p>
-              <p class="mt-2 break-all rounded bg-base-200 p-2 text-xs">{{ foreignCode }}</p>
-              <div class="mt-4 flex justify-end">
-                <BaseButton size="sm" @click="dismiss">{{ $t("pantry.scan.continue_scanning") }}</BaseButton>
-              </div>
-            </div>
-          </BaseCard>
-
-          <BaseCard v-if="scannedCode" class="mt-6">
-            <template #title>{{ $t("pantry.scan.title") }}</template>
-            <template #subtitle>{{ scannedCode }}</template>
-
-            <div class="border-t border-gray-300 p-4">
-              <p v-if="searching" class="text-sm">
-                {{ $t("pantry.scan.searching", { code: scannedCode }) }}
-              </p>
-
-              <!-- Unknown code: name it and carry on -->
-              <form v-else-if="showNewItemForm" class="flex flex-col gap-3" @submit.prevent="createFromScan">
-                <p v-if="suggestion?.found" class="text-xs">
-                  {{ $t("pantry.scan.suggested_by_openfoodfacts") }}
-                  <span v-if="suggestion.amount"> &middot; {{ suggestion.amount }}</span>
-                </p>
-                <p v-else class="text-sm">
-                  {{ $t("pantry.scan.no_match", { code: scannedCode }) }}
-                </p>
-
-                <input
-                  ref="nameInput"
-                  v-model="newName"
-                  type="text"
-                  class="input input-bordered w-full"
-                  :placeholder="$t('pantry.scan.name_placeholder')"
-                  maxlength="255"
-                />
-
-                <div class="flex flex-wrap gap-2">
-                  <div class="min-w-40 grow">
-                    <input
-                      v-model="newExpiry"
-                      type="text"
-                      inputmode="numeric"
-                      class="input input-bordered w-full"
-                      :class="expiryLooksWrong ? 'input-error' : ''"
-                      :placeholder="$t('pantry.scan.expiry_placeholder')"
-                    />
-                    <p v-if="expiryLooksWrong" class="mt-1 text-xs text-error">
-                      {{ $t("pantry.scan.expiry_unreadable") }}
-                    </p>
-                    <p v-else-if="parsedExpiry" class="mt-1 text-xs">
-                      {{
-                        $t("pantry.scan.expiry_reads_as", {
-                          date: formatShortDate(parsedExpiry),
-                        })
-                      }}
-                    </p>
-                  </div>
-                  <div class="w-28">
-                    <input
-                      v-model.number="newMinStock"
-                      type="number"
-                      min="0"
-                      class="input input-bordered w-full"
-                      :placeholder="$t('items.min_stock')"
-                    />
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="text-xs">{{ $t("pantry.scan.expiry_quick") }}:</span>
-                  <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(6)">+6 M</button>
-                  <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(12)">+1 J</button>
-                  <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(24)">+2 J</button>
-                  <button type="button" class="btn btn-ghost btn-xs" @click="newExpiry = ''">
-                    {{ $t("pantry.scan.expiry_clear") }}
-                  </button>
-                </div>
-
-                <div class="flex flex-wrap justify-end gap-2">
-                  <BaseButton type="button" class="btn-ghost" size="sm" @click="dismiss">
-                    {{ $t("pantry.scan.skip") }}
-                  </BaseButton>
-                  <BaseButton type="submit" size="sm" :disabled="creating || !newName.trim() || !location">
-                    {{ $t("pantry.scan.create_and_continue") }}
-                  </BaseButton>
-                </div>
-              </form>
-
-              <!-- Known code -->
-              <div v-else class="flex flex-col gap-3">
-                <p v-if="matches.length > 1" class="text-sm">
-                  {{ $t("pantry.scan.several_matches", { n: matches.length }) }}
-                </p>
-                <div
-                  v-for="item in matches"
-                  :key="item.id"
-                  class="flex flex-wrap items-center gap-2 rounded border border-gray-300 p-3"
-                >
-                  <div class="grow">
-                    <p class="font-medium">{{ item.name }}</p>
-                    <p class="text-xs">
-                      {{ $t("pantry.low_stock.in_stock") }}: {{ item.quantity }}
-                      <template v-if="item.location"> &middot; {{ item.location.name }}</template>
-                    </p>
-                  </div>
-                  <BaseButton size="sm" :disabled="item.quantity < 1" @click="record(item, 'consume')">
-                    <template #icon><MdiMinus /></template>
-                    1
-                  </BaseButton>
-                  <BaseButton size="sm" @click="record(item, 'restock')">
-                    <template #icon><MdiPlus /></template>
-                    1
-                  </BaseButton>
-                  <NuxtLink class="btn btn-ghost btn-sm" :to="`/item/${item.id}`">
-                    <MdiOpenInNew />
-                  </NuxtLink>
-                </div>
-
-                <div class="flex justify-end">
+          <div ref="resultAnchor">
+            <!-- A QR code from the packaging rather than one of our labels -->
+            <BaseCard v-if="foreignCode" class="mt-4">
+              <template #title>{{ $t("pantry.scan.foreign_title") }}</template>
+              <div class="border-t border-gray-300 p-4">
+                <p class="text-sm">{{ $t("pantry.scan.foreign_hint") }}</p>
+                <p class="mt-2 break-all rounded bg-base-200 p-2 text-xs">{{ foreignCode }}</p>
+                <div class="mt-4 flex justify-end">
                   <BaseButton size="sm" @click="dismiss">{{ $t("pantry.scan.continue_scanning") }}</BaseButton>
                 </div>
               </div>
-            </div>
-          </BaseCard>
+            </BaseCard>
+
+            <BaseCard v-if="scannedCode" class="mt-4">
+              <template #title>{{ $t("pantry.scan.title") }}</template>
+              <template #subtitle>{{ scannedCode }}</template>
+
+              <div class="border-t border-gray-300 p-4">
+                <p v-if="searching" class="text-sm">
+                  {{ $t("pantry.scan.searching", { code: scannedCode }) }}
+                </p>
+
+                <!-- Unknown code: name it and carry on -->
+                <form v-else-if="showNewItemForm" class="flex flex-col gap-3" @submit.prevent="createFromScan">
+                  <p v-if="suggestion?.found" class="text-xs">
+                    {{ $t("pantry.scan.suggested_by_openfoodfacts") }}
+                    <span v-if="suggestion.amount"> &middot; {{ suggestion.amount }}</span>
+                  </p>
+                  <p v-else class="text-sm">
+                    {{ $t("pantry.scan.no_match", { code: scannedCode }) }}
+                  </p>
+
+                  <input
+                    ref="nameInput"
+                    v-model="newName"
+                    type="text"
+                    class="input input-bordered w-full"
+                    :placeholder="$t('pantry.scan.name_placeholder')"
+                    maxlength="255"
+                  />
+
+                  <div class="flex flex-wrap gap-2">
+                    <div class="min-w-40 grow">
+                      <input
+                        v-model="newExpiry"
+                        type="text"
+                        inputmode="numeric"
+                        class="input input-bordered w-full"
+                        :class="expiryLooksWrong ? 'input-error' : ''"
+                        :placeholder="$t('pantry.scan.expiry_placeholder')"
+                      />
+                      <p v-if="expiryLooksWrong" class="mt-1 text-xs text-error">
+                        {{ $t("pantry.scan.expiry_unreadable") }}
+                      </p>
+                      <p v-else-if="parsedExpiry" class="mt-1 text-xs">
+                        {{
+                          $t("pantry.scan.expiry_reads_as", {
+                            date: formatShortDate(parsedExpiry),
+                          })
+                        }}
+                      </p>
+                    </div>
+                    <div class="w-28">
+                      <input
+                        v-model.number="newMinStock"
+                        type="number"
+                        min="0"
+                        class="input input-bordered w-full"
+                        :placeholder="$t('items.min_stock')"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs">{{ $t("pantry.scan.expiry_quick") }}:</span>
+                    <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(6)">+6 M</button>
+                    <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(12)">+1 J</button>
+                    <button type="button" class="btn btn-ghost btn-xs" @click="setExpiryMonths(24)">+2 J</button>
+                    <button type="button" class="btn btn-ghost btn-xs" @click="newExpiry = ''">
+                      {{ $t("pantry.scan.expiry_clear") }}
+                    </button>
+                  </div>
+
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <BaseButton type="button" class="btn-ghost" size="sm" @click="dismiss">
+                      {{ $t("pantry.scan.skip") }}
+                    </BaseButton>
+                    <BaseButton type="submit" size="sm" :disabled="creating || !newName.trim() || !location">
+                      {{ $t("pantry.scan.create_and_continue") }}
+                    </BaseButton>
+                  </div>
+                </form>
+
+                <!-- Known code -->
+                <div v-else class="flex flex-col gap-3">
+                  <p v-if="matches.length > 1" class="text-sm">
+                    {{ $t("pantry.scan.several_matches", { n: matches.length }) }}
+                  </p>
+                  <div
+                    v-for="item in matches"
+                    :key="item.id"
+                    class="flex flex-wrap items-center gap-2 rounded border border-gray-300 p-3"
+                  >
+                    <div class="grow">
+                      <p class="font-medium">{{ item.name }}</p>
+                      <p class="text-xs">
+                        {{ $t("pantry.low_stock.in_stock") }}: {{ item.quantity }}
+                        <template v-if="item.location"> &middot; {{ item.location.name }}</template>
+                      </p>
+                    </div>
+                    <BaseButton size="sm" :disabled="item.quantity < 1" @click="record(item, 'consume')">
+                      <template #icon><MdiMinus /></template>
+                      1
+                    </BaseButton>
+                    <BaseButton size="sm" @click="record(item, 'restock')">
+                      <template #icon><MdiPlus /></template>
+                      1
+                    </BaseButton>
+                    <NuxtLink class="btn btn-ghost btn-sm" :to="`/item/${item.id}`">
+                      <MdiOpenInNew />
+                    </NuxtLink>
+                  </div>
+
+                  <div class="flex justify-end">
+                    <BaseButton size="sm" @click="dismiss">{{ $t("pantry.scan.continue_scanning") }}</BaseButton>
+                  </div>
+                </div>
+              </div>
+            </BaseCard>
+          </div>
         </div>
       </div>
     </section>
   </div>
 </template>
-
-<style lang="css" scoped>
-  video {
-    width: 100%;
-    object-fit: cover;
-    margin-left: auto;
-    margin-right: auto;
-  }
-</style>
