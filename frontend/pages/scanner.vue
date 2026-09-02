@@ -35,7 +35,7 @@
 
   /** What to do automatically once a barcode resolves to exactly one item. */
   type ScanMode = "ask" | "consume" | "restock";
-  const scanMode = ref<ScanMode>("restock");
+  const scanMode = useLocalStorage<ScanMode>("homebox/preferences/scanner-mode", "restock");
 
   const scannedCode = ref<string | null>(null);
   /** A QR code that belongs to somebody else, shown rather than followed. */
@@ -360,11 +360,12 @@
     loopHandle = window.setTimeout(scanLoop, 120);
   }
 
-  onMounted(async () => {
-    if (!cameraOn.value) {
-      return;
-    }
-
+  /**
+   * Picks the decoding engine. Independent of whether the camera is running:
+   * doing this only on camera start meant that turning the camera on after
+   * having started with it off silently fell back to the slower JS decoder.
+   */
+  function setupDetector() {
     // Prefer the browser's own detector where it exists. It is the same
     // machinery a native scanner app uses and is dramatically more forgiving
     // than decoding frames in JavaScript.
@@ -382,8 +383,14 @@
     if (!detector) {
       engine.value = "zxing";
     }
+  }
 
-    await startCamera();
+  onMounted(async () => {
+    setupDetector();
+
+    if (cameraOn.value) {
+      await startCamera();
+    }
   });
 
   // ---------------------------------------------------------------------------
@@ -400,8 +407,10 @@
   const wedgeSeen = ref(false);
 
   // With a handheld scanner the camera is dead weight: it drains the battery
-  // and occupies the screen with a picture nobody looks at.
-  const cameraOn = ref(true);
+  // and occupies the screen with a picture nobody looks at. Remembered, because
+  // somebody who works with a scanner does not want to switch it off on every
+  // visit.
+  const cameraOn = useLocalStorage("homebox/preferences/scanner-camera", true);
   watch(cameraOn, on => (on ? startCamera() : stopCamera()));
 
   function onKeyDown(event: KeyboardEvent) {
