@@ -2,7 +2,10 @@
   import { useI18n } from "vue-i18n";
   import { classifyScan } from "~~/lib/barcode/scan-target";
   import { WedgeReader, isEditingTarget } from "~~/lib/barcode/wedge";
+  import { useKioskShell } from "~~/composables/use-kiosk-shell";
   import { pickForConsume } from "~~/lib/pantry/consume-target";
+  import { findBatch, planFill } from "~~/lib/pantry/fill-target";
+  import type { ItemSummary, LocationOut } from "~~/lib/api/types/data-contracts";
   import MdiUndo from "~icons/mdi/undo-variant";
   import MdiClose from "~icons/mdi/close";
 
@@ -10,13 +13,17 @@
    * The pantry terminal.
    *
    * A tablet on the wall next to the cupboard with a handheld scanner beside
-   * it. Taking something out costs one scan and nothing else - no picking, no
-   * confirming, no typing. Everything on this page exists to make that one
-   * scan trustworthy: it says out loud what it booked, and it can take it back.
+   * it, working in both directions: unpacking a box into the pantry, and taking
+   * things back out of it.
    *
-   * Deliberately not on the scanner page. That page is for filling the pantry,
-   * where you want the camera, a location and a form. This one is for emptying
-   * it, where every one of those is a way to get it wrong.
+   * Deliberately not the scanner page. That page is a form you scroll through,
+   * which is fine on a phone you are holding and wrong here: with a handheld
+   * scanner the result would land below the fold and you would scroll up after
+   * every single tin. Everything on this page fits one screen and never moves.
+   *
+   * The other rule is that a text field is never focused on its own. Focus in a
+   * field means the next scan is typed into it instead of being booked, which
+   * is exactly the kind of quiet nonsense a wall device must not produce.
    */
 
   definePageMeta({
@@ -27,35 +34,24 @@
 
   const { t } = useI18n();
   const api = useUserApi();
+  const { started, status, unresolved, tone, start, report, park } = useKioskShell();
 
-  type StatusKind = "idle" | "ok" | "warn" | "error";
+  type Mode = "consume" | "fill";
+  const mode = useLocalStorage<Mode>("homebox/kiosk/mode", "consume");
 
-  interface Status {
-    kind: StatusKind;
-    title: string;
-    detail?: string;
-    note?: string;
-  }
-
-  const status = ref<Status>({ kind: "idle", title: "" });
   const busy = ref(false);
-  const started = ref(false);
-
-  /** Bookings that can still be taken back, newest last. */
-  const undoStack = ref<Array<{ itemId: string; entryId: string; name: string }>>([]);
+  const listOpen = ref(false);
 
   /**
-   * Codes that could not be booked, kept on the device.
+   * Bookings that can still be taken back, newest last.
    *
-   * Swallowing them would be the worst behaviour available: the tin leaves the
-   * cupboard, the stock stays where it was, and nothing ever says so. Keeping
-   * them turns the failure into a short list to work through on the phone.
+   * A created item is remembered as such: undoing a creation has to remove the
+   * item, not leave an empty one behind that will haunt the barcode later.
    */
-  const unresolved = useLocalStorage<Array<{ code: string; at: string; reason: string }>>(
-    "homebox/kiosk/unresolved",
-    []
-  );
-  const listOpen = ref(false);
+  type Booking =
+    | { kind: "consume" | "restock"; itemId: string; entryId: string; name: string }
+    | { kind: "created"; itemId: string; barcode: string; name: string };
+  const undoStack = ref<Booking[]>([]);
 
   /**
    * How often the same item was scanned in a row.
@@ -67,57 +63,299 @@
   const streak = ref(0);
   const lastItemId = ref<string | null>(null);
 
-  // ---------------------------------------------------------------------------
-  // Sound
-  //
-  // The scanner beeps when it *reads* a code, not when the stock actually
-  // moved. Those are different events and the difference only shows up when it
-  // hurts, so the booking gets its own voice - and then you do not have to look
-  // at the screen at all in the normal case.
-  // ---------------------------------------------------------------------------
-
-  let audio: AudioContext | null = null;
-
-  function beep(hz: number, ms: number, delay = 0) {
-    if (!audio) return;
-
-    const osc = audio.createOscillator();
-    const gain = audio.createGain();
-    osc.type = "sine";
-    osc.frequency.value = hz;
-    osc.connect(gain).connect(audio.destination);
-
-    const at = audio.currentTime + delay;
-    const until = at + ms / 1000;
-    gain.gain.setValueAtTime(0.0001, at);
-    gain.gain.exponentialRampToValueAtTime(0.25, at + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, until);
-    osc.start(at);
-    osc.stop(until + 0.02);
+  function forgetStreak() {
+    streak.value = 0;
+    lastItemId.value = null;
   }
 
-  function sound(kind: StatusKind) {
-    switch (kind) {
-      case "ok":
-        beep(1046, 90);
-        break;
-      case "warn":
-        beep(660, 110);
-        beep(660, 110, 0.17);
-        break;
-      case "error":
-        beep(196, 340);
-        break;
+  function noteStreak(itemId: string) {
+    streak.value = lastItemId.value === itemId ? streak.value + 1 : 1;
+    lastItemId.value = itemId;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Taking things out
+  // ---------------------------------------------------------------------------
+
+  async function consumeScan(code: string, items: ItemSummary[]) {
+    const choice = pickForConsume(items);
+
+    if (!choice) {
+      forgetStreak();
+      const known = items.length > 0;
+      park(code, known ? "already_empty" : "unknown");
+      report({
+        kind: known ? "warn" : "error",
+        title: known ? t("pantry.kiosk.already_empty", { name: items[0].name }) : t("pantry.kiosk.unknown"),
+        detail: code,
+        note: t("pantry.kiosk.noted"),
+      });
+      return;
     }
+
+    const item = choice.item;
+    const { data, error } = await api.pantry.record(item.id, {
+      amount: 1,
+      type: "consume",
+      note: "",
+      date: new Date(),
+    });
+
+    if (error || !data) {
+      forgetStreak();
+      report({ kind: "error", title: t("pantry.kiosk.book_failed"), detail: item.name });
+      return;
+    }
+
+    const booked: Booking = { kind: "consume", itemId: item.id, entryId: data.id, name: item.name };
+    undoStack.value = [...undoStack.value, booked].slice(-20);
+    noteStreak(item.id);
+
+    const left = item.quantity - 1;
+    // Running out is worth hearing about even for something with no minimum
+    // set, because the next person at the cupboard finds an empty shelf.
+    const low = left === 0 || (item.minStock > 0 && left <= item.minStock);
+
+    const notes: string[] = [];
+    if (low) notes.push(t("pantry.kiosk.below_minimum"));
+    if (choice.alternatives > 0) notes.push(t("pantry.kiosk.soonest_of", { n: choice.alternatives + 1 }));
+
+    report({
+      kind: low ? "warn" : "ok",
+      title: item.name,
+      detail: left === 0 ? t("pantry.kiosk.left_none") : t("pantry.kiosk.left", { n: left }),
+      note: notes.join(" · ") || undefined,
+    });
   }
 
-  function report(next: Status) {
-    status.value = next;
-    sound(next.kind);
+  // ---------------------------------------------------------------------------
+  // Putting things in
+  //
+  // The whole difficulty is that one product can have two best-before dates and
+  // an item can only hold one, so they become two items. A scan therefore does
+  // not say which of them it belongs to - only the date does. It is asked for
+  // once per batch and then remembered, so a box of identical tins costs one
+  // scan each and nothing more.
+  // ---------------------------------------------------------------------------
+
+  const location = ref<LocationOut | null>(null);
+  const locationId = useLocalStorage<string>("homebox/kiosk/location", "");
+
+  /** Barcode to the item it was booked into earlier in this session. */
+  const settled = ref<Record<string, string>>({});
+
+  type FillStep = "none" | "choose" | "date" | "name";
+  const fillStep = ref<FillStep>("none");
+
+  const pendingCode = ref("");
+  const pendingItems = ref<ItemSummary[]>([]);
+  const pendingName = ref("");
+  const editingName = ref(false);
+
+  function resetFill() {
+    fillStep.value = "none";
+    pendingCode.value = "";
+    pendingItems.value = [];
+    pendingName.value = "";
+    editingName.value = false;
   }
 
-  function park(code: string, reason: string) {
-    unresolved.value = [{ code, at: new Date().toISOString(), reason }, ...unresolved.value].slice(0, 100);
+  async function fillScan(code: string, items: ItemSummary[], suggestion?: string) {
+    if (!location.value) {
+      report({ kind: "error", title: t("pantry.kiosk.pick_location") });
+      return;
+    }
+
+    const plan = planFill(items, settled.value[code] ?? null);
+
+    if (plan.kind === "add") {
+      await addToBatch(code, plan.item);
+      return;
+    }
+
+    pendingCode.value = code;
+    pendingItems.value = items;
+
+    if (plan.kind === "choose") {
+      fillStep.value = "choose";
+      report({ kind: "ok", title: items[0].name, detail: t("pantry.kiosk.which_batch") });
+      return;
+    }
+
+    // Nothing carries this code yet. The name is whatever the product lookup
+    // offered; it is shown rather than focused, because focusing it would send
+    // the next scan into the field instead of booking it.
+    pendingName.value = suggestion ?? "";
+    fillStep.value = pendingName.value ? "date" : "name";
+    report({
+      kind: pendingName.value ? "ok" : "warn",
+      title: pendingName.value || t("pantry.kiosk.unknown"),
+      detail: pendingName.value ? t("pantry.kiosk.which_date") : t("pantry.kiosk.needs_name"),
+    });
+  }
+
+  /** One more of a batch that is already there. */
+  async function addToBatch(code: string, item: ItemSummary) {
+    const { data, error } = await api.pantry.record(item.id, {
+      amount: 1,
+      type: "restock",
+      note: "",
+      date: new Date(),
+    });
+
+    if (error || !data) {
+      forgetStreak();
+      report({ kind: "error", title: t("pantry.kiosk.book_failed"), detail: item.name });
+      return;
+    }
+
+    settled.value = { ...settled.value, [code]: item.id };
+    const booked: Booking = { kind: "restock", itemId: item.id, entryId: data.id, name: item.name };
+    undoStack.value = [...undoStack.value, booked].slice(-20);
+    noteStreak(item.id);
+    resetFill();
+
+    report({
+      kind: "ok",
+      title: item.name,
+      detail: t("pantry.kiosk.now", { n: item.quantity + 1 }),
+      note: expiryNote(item),
+    });
+  }
+
+  function expiryNote(item: ItemSummary): string | undefined {
+    const at = new Date(item.expiryDate);
+    if (Number.isNaN(at.getTime()) || at.getFullYear() <= 1900) return undefined;
+    return t("pantry.kiosk.best_before", { date: at.toLocaleDateString() });
+  }
+
+  /** The date settles which batch the scan belongs to, existing or new. */
+  async function pickDate(date: Date | null) {
+    const code = pendingCode.value;
+    const existing = findBatch(pendingItems.value, date);
+
+    if (existing) {
+      await addToBatch(code, existing);
+      return;
+    }
+
+    await createBatch(code, date);
+  }
+
+  async function createBatch(code: string, date: Date | null) {
+    if (!location.value) {
+      report({ kind: "error", title: t("pantry.kiosk.pick_location") });
+      return;
+    }
+
+    // A new batch of a product already in the pantry keeps its name, so the two
+    // batches read as the same thing on the shelf list.
+    const name = pendingItems.value[0]?.name || pendingName.value.trim();
+    if (!name) {
+      fillStep.value = "name";
+      return;
+    }
+
+    const { data, error } = await api.items.create({
+      parentId: null,
+      name,
+      description: "",
+      locationId: location.value.id,
+      labelIds: [],
+      barcode: code,
+      expiryDate: date ?? "",
+      // The minimum belongs to the product rather than to one batch of it, so a
+      // batch created by a scan does not carry one. The low-stock view totals
+      // the batches of a barcode, so a minimum set on any of them still counts.
+      minStock: 0,
+    });
+
+    if (error || !data) {
+      forgetStreak();
+      park(code, "create_failed");
+      report({ kind: "error", title: t("pantry.kiosk.create_failed"), detail: code, note: t("pantry.kiosk.noted") });
+      return;
+    }
+
+    settled.value = { ...settled.value, [code]: data.id };
+    const booked: Booking = { kind: "created", itemId: data.id, barcode: code, name };
+    undoStack.value = [...undoStack.value, booked].slice(-20);
+    noteStreak(data.id);
+    resetFill();
+
+    report({
+      kind: "ok",
+      title: name,
+      detail: t("pantry.kiosk.created"),
+      note: date ? t("pantry.kiosk.best_before", { date: date.toLocaleDateString() }) : undefined,
+    });
+  }
+
+  /** Abandons the batch this barcode was settled into, to enter a new date. */
+  function differentDate() {
+    const code = pendingCode.value || lastBarcode.value;
+    if (!code) return;
+
+    const { [code]: _dropped, ...rest } = settled.value;
+    settled.value = rest;
+    pendingCode.value = code;
+    fillStep.value = "date";
+  }
+
+  const lastBarcode = ref("");
+
+  // ---------------------------------------------------------------------------
+  // Undo
+  // ---------------------------------------------------------------------------
+
+  const canUndo = computed(() => undoStack.value.length > 0 && !busy.value);
+
+  /**
+   * Takes the last booking back.
+   *
+   * Deleting a log entry deliberately does not move the stock, so reversing one
+   * is a movement the other way; both entries then go, because a pair that
+   * cancels out is noise in a log meant to show what was actually used.
+   */
+  async function undoLast() {
+    const last = undoStack.value[undoStack.value.length - 1];
+    if (!last || busy.value) return;
+
+    busy.value = true;
+    try {
+      if (last.kind === "created") {
+        const { error } = await api.items.delete(last.itemId);
+        if (error) {
+          report({ kind: "error", title: t("pantry.kiosk.undo_failed"), detail: last.name });
+          return;
+        }
+
+        const { [last.barcode]: _dropped, ...rest } = settled.value;
+        settled.value = rest;
+      } else {
+        const { data: back, error } = await api.pantry.record(last.itemId, {
+          amount: 1,
+          type: last.kind === "consume" ? "restock" : "consume",
+          note: "",
+          date: new Date(),
+        });
+
+        if (error || !back) {
+          report({ kind: "error", title: t("pantry.kiosk.undo_failed"), detail: last.name });
+          return;
+        }
+
+        await api.pantry.deleteEntry(last.entryId);
+        await api.pantry.deleteEntry(back.id);
+      }
+
+      undoStack.value = undoStack.value.slice(0, -1);
+      forgetStreak();
+      resetFill();
+      report({ kind: "ok", title: t("pantry.kiosk.undone"), detail: last.name });
+    } finally {
+      busy.value = false;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -130,124 +368,42 @@
     // A Homebox label is not a product. Following it would navigate out of the
     // terminal, which is exactly what a wall device must never do on its own.
     if (target.kind !== "code") {
-      streak.value = 0;
-      lastItemId.value = null;
+      forgetStreak();
       report({ kind: "error", title: t("pantry.kiosk.not_a_product"), detail: text });
       return;
     }
 
     const code = target.value;
-    const { data, error } = await api.pantry.scan(code);
+    lastBarcode.value = code;
 
+    const { data, error } = await api.pantry.scan(code);
     if (error || !data) {
-      streak.value = 0;
-      lastItemId.value = null;
+      forgetStreak();
       park(code, "lookup_failed");
       report({ kind: "error", title: t("pantry.kiosk.lookup_failed"), detail: code });
       return;
     }
 
-    const choice = pickForConsume(data.items ?? []);
+    const items = data.items ?? [];
 
-    if (!choice) {
-      streak.value = 0;
-      lastItemId.value = null;
-
-      const known = (data.items ?? []).length > 0;
-      park(code, known ? "already_empty" : "unknown");
-      report({
-        kind: known ? "warn" : "error",
-        title: known ? t("pantry.kiosk.already_empty", { name: data.items[0].name }) : t("pantry.kiosk.unknown"),
-        detail: code,
-        note: t("pantry.kiosk.noted"),
-      });
+    if (mode.value === "consume") {
+      resetFill();
+      await consumeScan(code, items);
       return;
     }
 
-    await book(choice.item, choice.alternatives);
+    const suggestion = data.suggestion?.found
+      ? [data.suggestion.brand, data.suggestion.name].filter(Boolean).join(" ").trim()
+      : "";
+    await fillScan(code, items, suggestion);
   }
-
-  async function book(item: { id: string; name: string; quantity: number; minStock: number }, alternatives: number) {
-    const { data, error } = await api.pantry.record(item.id, {
-      amount: 1,
-      type: "consume",
-      note: "",
-      date: new Date(),
-    });
-
-    if (error || !data) {
-      streak.value = 0;
-      lastItemId.value = null;
-      report({ kind: "error", title: t("pantry.kiosk.book_failed"), detail: item.name });
-      return;
-    }
-
-    undoStack.value = [...undoStack.value, { itemId: item.id, entryId: data.id, name: item.name }].slice(-20);
-
-    streak.value = lastItemId.value === item.id ? streak.value + 1 : 1;
-    lastItemId.value = item.id;
-
-    const left = item.quantity - 1;
-    // Running out is worth hearing about even for something with no minimum
-    // set, because the next person at the cupboard finds an empty shelf.
-    const low = left === 0 || (item.minStock > 0 && left <= item.minStock);
-
-    const notes: string[] = [];
-    if (low) notes.push(t("pantry.kiosk.below_minimum"));
-    if (alternatives > 0) notes.push(t("pantry.kiosk.soonest_of", { n: alternatives + 1 }));
-
-    report({
-      kind: low ? "warn" : "ok",
-      title: item.name,
-      detail: left === 0 ? t("pantry.kiosk.left_none") : t("pantry.kiosk.left", { n: left }),
-      note: notes.join(" · ") || undefined,
-    });
-  }
-
-  /**
-   * Takes the last booking back.
-   *
-   * Deleting a log entry deliberately does not move the stock, so putting the
-   * item back is a restock; both entries then go, because a pair that cancels
-   * out is noise in a log meant to show what was actually used.
-   */
-  async function undoLast() {
-    const last = undoStack.value[undoStack.value.length - 1];
-    if (!last || busy.value) return;
-
-    busy.value = true;
-    try {
-      const { data: back, error } = await api.pantry.record(last.itemId, {
-        amount: 1,
-        type: "restock",
-        note: "",
-        date: new Date(),
-      });
-
-      if (error || !back) {
-        report({ kind: "error", title: t("pantry.kiosk.undo_failed"), detail: last.name });
-        return;
-      }
-
-      await api.pantry.deleteEntry(last.entryId);
-      await api.pantry.deleteEntry(back.id);
-
-      undoStack.value = undoStack.value.slice(0, -1);
-      streak.value = 0;
-      lastItemId.value = null;
-      report({ kind: "ok", title: t("pantry.kiosk.undone"), detail: last.name });
-    } finally {
-      busy.value = false;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Handheld scanner
-  // ---------------------------------------------------------------------------
 
   const wedge = new WedgeReader();
 
   function onKeyDown(event: KeyboardEvent) {
+    // Keys typed into a field belong to that field. A scan fired while a text
+    // box has focus lands there visibly, which is correctable; silently taking
+    // what somebody is writing would not be.
     if (isEditingTarget(event.target)) {
       return;
     }
@@ -258,6 +414,10 @@
     }
 
     event.preventDefault();
+    run(code);
+  }
+
+  function run(code: string) {
     busy.value = true;
     onScan(code)
       .catch(() => report({ kind: "error", title: t("pantry.kiosk.lookup_failed"), detail: code }))
@@ -270,88 +430,44 @@
   const manualCode = ref("");
   const manualOpen = ref(false);
 
-  async function submitManual() {
+  function submitManual() {
     const code = manualCode.value.trim();
     if (!code || busy.value) return;
 
     manualCode.value = "";
     manualOpen.value = false;
-    busy.value = true;
-    try {
-      await onScan(code);
-    } finally {
-      busy.value = false;
-    }
+    run(code);
   }
 
-  // ---------------------------------------------------------------------------
-  // Staying alive
-  //
-  // Two things end a wall terminal quietly: the screen locking, which eats the
-  // first scan of every visit, and the session expiring, which turns every scan
-  // into a redirect. Both are handled here rather than left to the tablet.
-  // ---------------------------------------------------------------------------
-
-  let wakeLock: { release: () => Promise<void> } | null = null;
-  let refreshTimer: number | null = null;
-
-  async function keepAwake() {
-    try {
-      wakeLock =
-        (await (
-          navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<{ release: () => Promise<void> }> } }
-        ).wakeLock?.request("screen")) ?? null;
-    } catch {
-      // Not supported, or refused because the page was hidden. The terminal
-      // still works; the tablet's own screen timeout then applies.
-      wakeLock = null;
-    }
+  function dismissUnresolved(index: number) {
+    unresolved.value = unresolved.value.filter((_, at) => at !== index);
   }
 
-  function onVisibilityChange() {
-    if (document.visibilityState === "visible" && started.value && !wakeLock) {
-      keepAwake().catch(() => {});
-    }
+  function confirmName() {
+    if (!pendingName.value.trim()) return;
+    editingName.value = false;
+    fillStep.value = "date";
   }
 
-  async function start() {
-    started.value = true;
-    status.value = { kind: "idle", title: "" };
-
-    audio ??= new AudioContext();
-    await audio.resume().catch(() => {});
-
-    await keepAwake();
-    await document.documentElement.requestFullscreen?.().catch(() => {});
-
-    const extend = () => api.user.refresh().catch(() => {});
-    extend();
-    refreshTimer = window.setInterval(extend, 6 * 60 * 60 * 1000);
-  }
-
-  onMounted(() => {
+  onMounted(async () => {
     window.addEventListener("keydown", onKeyDown);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-  });
 
-  onBeforeUnmount(() => {
-    window.removeEventListener("keydown", onKeyDown);
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    if (refreshTimer !== null) window.clearInterval(refreshTimer);
-    wakeLock?.release().catch(() => {});
-  });
-
-  const tone = computed(() => {
-    switch (status.value.kind) {
-      case "ok":
-        return "bg-success/15 text-success";
-      case "warn":
-        return "bg-warning/15 text-warning";
-      case "error":
-        return "bg-error/15 text-error";
-      default:
-        return "bg-base-300/10 text-base-content/40";
+    if (locationId.value) {
+      const { data } = await api.locations.get(locationId.value);
+      if (data) location.value = data;
     }
+  });
+
+  onBeforeUnmount(() => window.removeEventListener("keydown", onKeyDown));
+
+  watch(location, next => (locationId.value = next?.id ?? ""));
+
+  // Switching direction ends whatever was half-entered, and forgets the batches
+  // settled while filling: coming back later is a new box with a new date.
+  watch(mode, () => {
+    resetFill();
+    forgetStreak();
+    settled.value = {};
   });
 </script>
 
@@ -367,22 +483,99 @@
     </div>
 
     <template v-else>
+      <!-- Direction, and where a filled item lands. Both are set once and then
+           stay out of the way. -->
+      <div class="flex items-center gap-2 border-b border-white/10 p-2">
+        <div class="join">
+          <button
+            class="join-item btn btn-sm"
+            :class="mode === 'consume' ? 'btn-primary' : 'btn-ghost'"
+            @click="mode = 'consume'"
+          >
+            {{ $t("pantry.kiosk.mode_consume") }}
+          </button>
+          <button
+            class="join-item btn btn-sm"
+            :class="mode === 'fill' ? 'btn-primary' : 'btn-ghost'"
+            @click="mode = 'fill'"
+          >
+            {{ $t("pantry.kiosk.mode_fill") }}
+          </button>
+        </div>
+
+        <div v-if="mode === 'fill'" class="min-w-0 flex-1">
+          <LocationSelector v-model="location" />
+        </div>
+      </div>
+
       <!-- The whole point of the screen: what just happened, readable from a
            step away without putting the tin down. -->
       <div
-        class="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center transition-colors"
+        class="flex flex-1 flex-col items-center justify-center gap-3 overflow-y-auto p-4 text-center transition-colors"
         :class="tone"
       >
-        <template v-if="status.kind === 'idle'">
+        <!-- Which batch does this tin belong to? Only asked once per barcode
+             per session; the rest of the box goes in without a tap. -->
+        <template v-if="fillStep === 'choose'">
+          <p class="text-3xl font-bold">{{ pendingItems[0]?.name }}</p>
+          <p class="text-lg opacity-70">{{ $t("pantry.kiosk.which_batch") }}</p>
+          <div class="flex w-full max-w-xl flex-col gap-2">
+            <button
+              v-for="batch in pendingItems"
+              :key="batch.id"
+              class="btn btn-lg justify-between"
+              @click="addToBatch(pendingCode, batch)"
+            >
+              <span>{{ expiryNote(batch) ?? $t("pantry.kiosk.no_date") }}</span>
+              <span class="opacity-60">{{ batch.quantity }}</span>
+            </button>
+            <button class="btn btn-outline btn-lg" @click="fillStep = 'date'">
+              {{ $t("pantry.kiosk.other_date") }}
+            </button>
+          </div>
+        </template>
+
+        <template v-else-if="fillStep === 'name'">
+          <p class="text-2xl font-bold">{{ $t("pantry.kiosk.needs_name") }}</p>
+          <p class="font-mono opacity-60">{{ pendingCode }}</p>
+          <form class="flex w-full max-w-xl gap-2" @submit.prevent="confirmName">
+            <input v-model="pendingName" class="input input-bordered input-lg flex-1" autofocus />
+            <button class="btn btn-primary btn-lg" type="submit">{{ $t("pantry.kiosk.next") }}</button>
+          </form>
+        </template>
+
+        <template v-else-if="fillStep === 'date'">
+          <p class="text-2xl font-bold">{{ pendingItems[0]?.name || pendingName }}</p>
+          <p class="text-lg opacity-70">{{ $t("pantry.kiosk.which_date") }}</p>
+          <div class="w-full max-w-xl">
+            <FormDateTapPicker :model-value="null" @update:model-value="pickDate" />
+          </div>
+          <button class="btn btn-ghost btn-sm" @click="pickDate(null)">{{ $t("pantry.kiosk.no_date") }}</button>
+        </template>
+
+        <template v-else-if="status.kind === 'idle'">
           <p class="text-4xl font-light">{{ $t("pantry.kiosk.ready") }}</p>
-          <p class="text-lg opacity-60">{{ $t("pantry.kiosk.ready_hint") }}</p>
+          <p class="text-lg opacity-60">
+            {{ mode === "fill" ? $t("pantry.kiosk.ready_fill") : $t("pantry.kiosk.ready_hint") }}
+          </p>
         </template>
 
         <template v-else>
           <p class="max-w-full break-words text-5xl font-bold leading-tight">{{ status.title }}</p>
-          <p v-if="status.detail" class="text-7xl font-black tabular-nums">{{ status.detail }}</p>
+          <p v-if="status.detail" class="text-6xl font-black tabular-nums">{{ status.detail }}</p>
           <p v-if="status.note" class="text-xl opacity-80">{{ status.note }}</p>
           <p v-if="streak > 1" class="text-xl opacity-60">{{ $t("pantry.kiosk.streak", { n: streak }) }}</p>
+
+          <!-- The escape hatch for the one tin in the box with a different
+               date: it was just booked into the settled batch, so undo that
+               and ask again. -->
+          <button
+            v-if="mode === 'fill' && lastBarcode && status.kind === 'ok'"
+            class="btn btn-outline btn-sm mt-2"
+            @click="undoLast().then(differentDate)"
+          >
+            {{ $t("pantry.kiosk.other_date") }}
+          </button>
         </template>
       </div>
 
@@ -391,8 +584,8 @@
       <div class="flex items-center gap-2 border-t border-white/10 p-3">
         <button
           class="btn btn-lg flex-1 gap-2"
-          :class="undoStack.length ? 'btn-neutral' : 'btn-ghost'"
-          :disabled="!undoStack.length || busy"
+          :class="canUndo ? 'btn-neutral' : 'btn-ghost'"
+          :disabled="!canUndo"
           @click="undoLast"
         >
           <MdiUndo class="size-6" />
@@ -439,7 +632,7 @@
             <p class="font-mono text-lg">{{ entry.code }}</p>
             <p class="text-xs text-base-content/50">{{ $t(`pantry.kiosk.reason_${entry.reason}`) }}</p>
           </div>
-          <button class="btn btn-ghost btn-sm" @click="unresolved = unresolved.filter((_, n) => n !== i)">
+          <button class="btn btn-ghost btn-sm" @click="dismissUnresolved(i)">
             {{ $t("pantry.kiosk.list_done") }}
           </button>
         </li>

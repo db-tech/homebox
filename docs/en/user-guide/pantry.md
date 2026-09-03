@@ -203,19 +203,25 @@ a scan that matches several items simply lists them all.
 
 ## The pantry terminal
 
-A tablet on the wall next to the cupboard, a handheld scanner lying beside it,
-and taking something out costs one scan and nothing else. That is what
-**Pantry → Open the pantry terminal** (`/kiosk`) is for.
+A tablet on the wall next to the cupboard with a handheld scanner beside it,
+working in both directions: unpacking a box into the pantry, and taking things
+back out of it. That is what **Pantry → Open the pantry terminal** (`/kiosk`) is
+for.
 
-It is deliberately not the scanner page. That page is for *filling* the pantry,
-where you want a camera, a location and a form. The terminal is for *emptying*
-it, where every one of those is a way to get it wrong. It shows one thing at a
-time, in type you can read from a step away, and it has no navigation at all.
+It is deliberately not the scanner page. That page is a form you scroll through,
+which is fine on a phone you are holding and wrong here: with a handheld scanner
+the result lands below the fold and you would scroll up after every single tin.
+Everything on the terminal fits one screen and never moves.
+
+The other rule is that a text field is never focused on its own. Focus in a
+field means the next scan is typed into it instead of being booked — quiet
+nonsense of exactly the kind a wall device must not produce.
 
 Tap **Start the terminal** once. That single tap is what lets the browser keep
-the screen awake and make a sound — neither is granted without one.
+the screen awake and make a sound — neither is granted without one. **Take out**
+and **Put in** at the top switch direction.
 
-### What a scan does
+### Taking things out
 
 The scanned barcode is looked up and **one is taken out**, immediately. There is
 no confirmation step, because a confirmation step is the thing you asked to be
@@ -234,6 +240,38 @@ This matters more than it sounds. The scanner beeps when it *reads* a code, not
 when the stock actually moved — two different events, and the difference only
 shows up when it hurts. The terminal gives the booking its own voice.
 
+### Putting things in
+
+Pick a **place** once at the top; everything created goes there. Then scan.
+
+The awkward part of filling a pantry is that one product can have two
+best-before dates and an item can only hold one. Six tins until March and two
+until November are therefore two items — merging them would throw one of the
+dates away, and the dates are the reason the pantry view exists at all.
+
+That makes a scan ambiguous on its own: it could be another tin of a batch
+already there, or the first of a new one. Only the date settles it, so the date
+is the one thing the terminal asks for:
+
+- **A product it has never seen.** The name comes from the product lookup and is
+  shown, not focused. Then the date, then it is created.
+- **A product it knows.** The existing batches are offered as buttons — *Best
+  before 31.03.2027 · 4* — plus **A different date**. Tap one and the tin joins
+  that batch.
+- **Anything scanned again in the same session** goes straight into the batch
+  you settled on, with no tap at all.
+
+So a box of twenty identical tins costs three taps for the first one and one
+scan for each of the other nineteen. If one tin in the box has a different date,
+**A different date** on the result screen puts the last scan back and asks again.
+
+Batches settled this way are forgotten when you leave or switch direction. The
+next box of the same product is a new date, and silently adding it to last
+month's batch would put a wrong best-before date on real food.
+
+A batch created by a scan carries **no minimum stock**. The minimum belongs to
+the product rather than to one batch of it — see below.
+
 ### Undo
 
 **Undo** is always on screen and undoes the last booking, repeatedly if you keep
@@ -248,16 +286,29 @@ one. A run of the same item is shown as *3 in a row* so a slip is visible.
 Putting the item back is recorded as a restock and then both entries are
 removed, so the consumption log does not fill up with pairs that cancel out.
 
-### Which item a scan takes from
+### Which batch a scan takes from
 
-The same barcode can sit on more than one item — the same tinned tomatoes bought
-twice, or kept in two places. The scanner page asks you which. A terminal cannot
-ask, so it uses the rule you would follow at the shelf anyway: **the one that
-goes off first**.
+Taking out cannot ask which batch you meant — the whole point is that it costs
+one scan — so it uses the rule you would follow at the shelf anyway: **the one
+that goes off first**.
 
 Items with no best-before date come last, and items already at zero are skipped
 rather than blocking the ones that still have stock. When there was more than
 one candidate the screen says so.
+
+### Minimum stock across batches
+
+A minimum belongs to the **product**, not to one batch of it. Four tins until
+March plus two until November are six tins in the cupboard, so with a minimum of
+five that is not a shortage.
+
+**Below Minimum Stock** therefore adds up every item sharing a barcode and
+reports the product once, as the batch that runs out first, with the total
+alongside. A minimum set on any one batch counts for the whole product, which is
+why batches created by a scan do not need one of their own.
+
+Items without a barcode have nothing to group by and are judged on their own
+quantity, exactly as before.
 
 ### Unresolved scans
 
