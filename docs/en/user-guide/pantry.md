@@ -200,3 +200,87 @@ it does make correcting a name awkward until the scanner is disconnected.
 You can also type a barcode into an item's **Pantry** card in the edit form. The
 same product in two places is fine — barcodes are not required to be unique, and
 a scan that matches several items simply lists them all.
+
+## The pantry terminal
+
+A tablet on the wall next to the cupboard, a handheld scanner lying beside it,
+and taking something out costs one scan and nothing else. That is what
+**Pantry → Open the pantry terminal** (`/kiosk`) is for.
+
+It is deliberately not the scanner page. That page is for *filling* the pantry,
+where you want a camera, a location and a form. The terminal is for *emptying*
+it, where every one of those is a way to get it wrong. It shows one thing at a
+time, in type you can read from a step away, and it has no navigation at all.
+
+Tap **Start the terminal** once. That single tap is what lets the browser keep
+the screen awake and make a sound — neither is granted without one.
+
+### What a scan does
+
+The scanned barcode is looked up and **one is taken out**, immediately. There is
+no confirmation step, because a confirmation step is the thing you asked to be
+rid of.
+
+The screen then says what happened, and so does a sound, so in the normal case
+you never look at it:
+
+| | Screen | Sound |
+| --- | --- | --- |
+| Booked | green, item name and what is left | one short high blip |
+| Booked, but now low or empty | amber, plus *below minimum* | two mid beeps |
+| Unknown code, or the server did not answer | red | one long low tone |
+
+This matters more than it sounds. The scanner beeps when it *reads* a code, not
+when the stock actually moved — two different events, and the difference only
+shows up when it hurts. The terminal gives the booking its own voice.
+
+### Undo
+
+**Undo** is always on screen and undoes the last booking, repeatedly if you keep
+pressing it.
+
+That is on purpose instead of a guard against scanning the same thing twice:
+taking three tins out *is* three scans of the same code, so counting them down
+is correct. Scanning one tin twice by accident is the rarer case, and it is
+better fixed by a button than prevented by a rule that would break the common
+one. A run of the same item is shown as *3 in a row* so a slip is visible.
+
+Putting the item back is recorded as a restock and then both entries are
+removed, so the consumption log does not fill up with pairs that cancel out.
+
+### Which item a scan takes from
+
+The same barcode can sit on more than one item — the same tinned tomatoes bought
+twice, or kept in two places. The scanner page asks you which. A terminal cannot
+ask, so it uses the rule you would follow at the shelf anyway: **the one that
+goes off first**.
+
+Items with no best-before date come last, and items already at zero are skipped
+rather than blocking the ones that still have stock. When there was more than
+one candidate the screen says so.
+
+### Unresolved scans
+
+A code that no item carries is **not** silently dropped. The tin has left the
+cupboard either way, and stock that quietly disagrees with the shelf is worse
+than no stock figure at all.
+
+Such codes are kept on the device and counted at the bottom of the screen. Open
+the list, add the products on your phone at some point, and tick them off. The
+same happens when the stock was already at zero, or when the server could not be
+reached.
+
+### Leaving it running
+
+Two things end a wall terminal quietly, and both are handled:
+
+- **The screen locking.** The terminal asks the tablet to keep the screen on
+  while it is open. If you would rather let the screen sleep, set the tablet's
+  screen lock to **none** — otherwise the lock screen swallows the first scan of
+  every visit and you have to scan twice.
+- **The session expiring.** A Homebox session lasts a week, four with *stay
+  logged in*. The terminal extends its own session while it is open, so it does
+  not log itself out mid-month.
+
+If the scanner battery is flat or a code is damaged, **Type a code** at the
+bottom takes the digits by hand through exactly the same path.

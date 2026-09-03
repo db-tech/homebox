@@ -3,6 +3,7 @@
   import { ServerEvent, onServerEvent } from "~~/composables/use-server-events";
   import type { ConsumptionSummary, ItemSummary } from "~~/lib/api/types/data-contracts";
   import MdiAlertOutline from "~icons/mdi/alert-outline";
+  import MdiTabletDashboard from "~icons/mdi/tablet-dashboard";
   import MdiCartOutline from "~icons/mdi/cart-outline";
   import MdiChartLine from "~icons/mdi/chart-line";
   import MdiContentCopy from "~icons/mdi/content-copy";
@@ -106,6 +107,15 @@
     <BaseSectionHeader>
       {{ $t("pantry.title") }}
     </BaseSectionHeader>
+
+    <!-- The terminal is a full-screen page with no way back into the app, so it
+         needs a door somewhere. This is it. -->
+    <div>
+      <NuxtLink to="/kiosk" class="btn btn-ghost btn-sm gap-2">
+        <MdiTabletDashboard class="size-5" />
+        {{ $t("pantry.kiosk.open") }}
+      </NuxtLink>
+    </div>
 
     <!-- Expiring soon -->
     <BaseCard>
