@@ -263,7 +263,14 @@ is the one thing the terminal asks for:
 
 So a box of twenty identical tins costs three taps for the first one and one
 scan for each of the other nineteen. If one tin in the box has a different date,
-**A different date** on the result screen puts the last scan back and asks again.
+**A different date** on the result screen puts the last scan back and asks
+again, keeping the product — you never have to say what it is a second time.
+
+While the terminal is waiting for an answer, the button at the bottom left reads
+**Back** and steps out of the question rather than reversing a booking. It only
+means *Undo* when nothing is pending. One button with two meanings is how you
+end up reversing a tin you were happy with because you wanted to correct the one
+in your hand.
 
 Batches settled this way are forgotten when you leave or switch direction. The
 next box of the same product is a new date, and silently adding it to last

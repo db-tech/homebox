@@ -368,6 +368,7 @@
         },
         "kiosk": {
             "already_empty": "{name} was already at zero",
+            "back": "Back",
             "below_minimum": "Below minimum - reorder",
             "best_before": "Best before {date}",
             "book_failed": "Could not book that",

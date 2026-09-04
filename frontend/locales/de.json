@@ -368,6 +368,7 @@
         },
         "kiosk": {
             "already_empty": "{name} stand schon auf 0",
+            "back": "Zurück",
             "below_minimum": "Unter Mindestbestand - nachkaufen",
             "best_before": "Mindestens haltbar bis {date}",
             "book_failed": "Konnte nicht gebucht werden",

@@ -7,6 +7,7 @@
   import { findBatch, planFill } from "~~/lib/pantry/fill-target";
   import type { ItemSummary, LocationOut } from "~~/lib/api/types/data-contracts";
   import MdiUndo from "~icons/mdi/undo-variant";
+  import MdiArrowLeft from "~icons/mdi/arrow-left";
   import MdiClose from "~icons/mdi/close";
 
   /**
@@ -210,6 +211,7 @@
     }
 
     settled.value = { ...settled.value, [code]: item.id };
+    lastName.value = item.name;
     const booked: Booking = { kind: "restock", itemId: item.id, entryId: data.id, name: item.name };
     undoStack.value = [...undoStack.value, booked].slice(-20);
     noteStreak(item.id);
@@ -278,6 +280,7 @@
     }
 
     settled.value = { ...settled.value, [code]: data.id };
+    lastName.value = name;
     const booked: Booking = { kind: "created", itemId: data.id, barcode: code, name };
     undoStack.value = [...undoStack.value, booked].slice(-20);
     noteStreak(data.id);
@@ -291,18 +294,77 @@
     });
   }
 
+  /**
+   * The product of the most recent booking.
+   *
+   * Kept so that "a different date" can ask again without losing what the tin
+   * is. The booking it refers to has just been undone by then, and with a
+   * newly created batch the item is gone altogether, so the name cannot be
+   * read back off the items any more.
+   */
+  const lastBarcode = ref("");
+  const lastName = ref("");
+
+  /**
+   * The tin in your hand belongs to a different batch than the one the scan was
+   * booked into. The booking is taken back and the date asked for again.
+   */
+  async function bookedElsewhere() {
+    const before = undoStack.value.length;
+    await undoLast();
+
+    // Undo reports its own failure. Asking for a date after it would offer to
+    // book a tin that is still counted where it was.
+    if (undoStack.value.length === before) return;
+
+    await differentDate();
+  }
+
   /** Abandons the batch this barcode was settled into, to enter a new date. */
-  function differentDate() {
-    const code = pendingCode.value || lastBarcode.value;
+  async function differentDate() {
+    const code = lastBarcode.value;
     if (!code) return;
 
     const { [code]: _dropped, ...rest } = settled.value;
     settled.value = rest;
-    pendingCode.value = code;
-    fillStep.value = "date";
+
+    busy.value = true;
+    try {
+      // Read the product again rather than reuse what was on screen: the
+      // booking was just undone, and a batch created by it no longer exists.
+      // Without this the terminal forgets what it is holding and asks for a
+      // name it already knows.
+      const { data } = await api.pantry.scan(code);
+
+      pendingItems.value = data?.items ?? [];
+      pendingCode.value = code;
+      pendingName.value = pendingItems.value[0]?.name ?? lastName.value;
+      fillStep.value = "date";
+    } finally {
+      busy.value = false;
+    }
   }
 
-  const lastBarcode = ref("");
+  /** True while the terminal is waiting for an answer about the current scan. */
+  const pending = computed(() => fillStep.value !== "none");
+
+  /**
+   * Backs out of the question on screen.
+   *
+   * While something is pending, the bottom button has to mean "back" rather
+   * than "undo the last booking". One button with two meanings is how you end
+   * up reversing a tin you were happy with because you wanted to correct the
+   * one in your hand.
+   */
+  function cancelPending() {
+    if (fillStep.value === "date" && pendingItems.value.length > 0) {
+      fillStep.value = "choose";
+      return;
+    }
+
+    resetFill();
+    status.value = { kind: "idle", title: "" };
+  }
 
   // ---------------------------------------------------------------------------
   // Undo
@@ -572,7 +634,7 @@
           <button
             v-if="mode === 'fill' && lastBarcode && status.kind === 'ok'"
             class="btn btn-outline btn-sm mt-2"
-            @click="undoLast().then(differentDate)"
+            @click="bookedElsewhere"
           >
             {{ $t("pantry.kiosk.other_date") }}
           </button>
@@ -582,7 +644,13 @@
       <!-- Undo sits permanently on screen and is sized for a thumb: it is what
            makes an accidental scan a non-event rather than a correction later. -->
       <div class="flex items-center gap-2 border-t border-white/10 p-3">
+        <button v-if="pending" class="btn-neutral btn btn-lg flex-1 gap-2" :disabled="busy" @click="cancelPending">
+          <MdiArrowLeft class="size-6" />
+          {{ $t("pantry.kiosk.back") }}
+        </button>
+
         <button
+          v-else
           class="btn btn-lg flex-1 gap-2"
           :class="canUndo ? 'btn-neutral' : 'btn-ghost'"
           :disabled="!canUndo"
