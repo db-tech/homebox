@@ -285,6 +285,29 @@ func (r *GroupRepository) GroupUpdate(ctx context.Context, id uuid.UUID, data Gr
 	return r.groupMapper.MapErr(q.Save(ctx))
 }
 
+// EmergencySettings reads how many people the stockpile has to feed, for how
+// long, and which items on the non-food checklist are ticked off.
+//
+// Zeroes mean nobody has said; the defaults are applied where the figures are
+// used rather than here, so that "unset" stays distinguishable from "one".
+func (r *GroupRepository) EmergencySettings(ctx context.Context, id uuid.UUID) (people, days int, checklist string, err error) {
+	entity, err := r.db.Group.Get(ctx, id)
+	if err != nil {
+		return 0, 0, "", err
+	}
+
+	return entity.HouseholdSize, entity.EmergencyDays, entity.EmergencyChecklist, nil
+}
+
+// SetEmergencySettings stores the household figures and the ticked checklist.
+func (r *GroupRepository) SetEmergencySettings(ctx context.Context, id uuid.UUID, people, days int, checklist string) error {
+	return r.db.Group.UpdateOneID(id).
+		SetHouseholdSize(people).
+		SetEmergencyDays(days).
+		SetEmergencyChecklist(checklist).
+		Exec(ctx)
+}
+
 // RecipesAPIKey reads the stored key for making a request with. It is
 // deliberately its own call rather than a field on Group: everything that
 // returns a Group returns it to a browser, and this must not.

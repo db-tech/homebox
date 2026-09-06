@@ -1,4 +1,4 @@
-h1:xFtSX4R3pEnDSJ+YM66knEB+Sv0kqvxLuA4xfkdX8Eg=
+h1:O59Aa4FvcJIf0V07C6B+46f9LsGvKgq8qaJjUnrBV0Q=
 20220929052825_init.sql h1:ZlCqm1wzjDmofeAcSX3jE4h4VcdTNGpRg2eabztDy9Q=
 20221001210956_group_invitations.sql h1:YQKJFtE39wFOcRNbZQ/d+ZlHwrcfcsZlcv/pLEYdpjw=
 20221009173029_add_user_roles.sql h1:vWmzAfgEWQeGk0Vn70zfVPCcfEZth3E0JcvyKTjpYyU=
@@ -16,3 +16,4 @@ h1:xFtSX4R3pEnDSJ+YM66knEB+Sv0kqvxLuA4xfkdX8Eg=
 20241226183416_sync_childs.sql h1:L9EWCzgz68OEw0r6Ryv0BdC6ViJbd/C/pt9o/FkSsbk=
 20260829090304_add_pantry_fields.sql h1:hmThEZt2PbukQMaSB2zzrsrfIIErmmuTf/mtkSxnfV0=
 20260906170628_add_recipes_api_key.sql h1:2NKrsGlSsT1pFqSDrMRs9IsQkwwOseiHJRIWZw17OuE=
+20260906191712_add_emergency_stock.sql h1:xKjnBEs74SqapyqiCJju3ZmdN8532TuYZkvvvhWcpCo=

@@ -321,6 +321,53 @@ func (iu *ItemUpdate) ClearBarcode() *ItemUpdate {
 	return iu
 }
 
+// SetNetWeight sets the "net_weight" field.
+func (iu *ItemUpdate) SetNetWeight(i int) *ItemUpdate {
+	iu.mutation.ResetNetWeight()
+	iu.mutation.SetNetWeight(i)
+	return iu
+}
+
+// SetNillableNetWeight sets the "net_weight" field if the given value is not nil.
+func (iu *ItemUpdate) SetNillableNetWeight(i *int) *ItemUpdate {
+	if i != nil {
+		iu.SetNetWeight(*i)
+	}
+	return iu
+}
+
+// AddNetWeight adds i to the "net_weight" field.
+func (iu *ItemUpdate) AddNetWeight(i int) *ItemUpdate {
+	iu.mutation.AddNetWeight(i)
+	return iu
+}
+
+// ClearNetWeight clears the value of the "net_weight" field.
+func (iu *ItemUpdate) ClearNetWeight() *ItemUpdate {
+	iu.mutation.ClearNetWeight()
+	return iu
+}
+
+// SetEmergencyCategory sets the "emergency_category" field.
+func (iu *ItemUpdate) SetEmergencyCategory(ic item.EmergencyCategory) *ItemUpdate {
+	iu.mutation.SetEmergencyCategory(ic)
+	return iu
+}
+
+// SetNillableEmergencyCategory sets the "emergency_category" field if the given value is not nil.
+func (iu *ItemUpdate) SetNillableEmergencyCategory(ic *item.EmergencyCategory) *ItemUpdate {
+	if ic != nil {
+		iu.SetEmergencyCategory(*ic)
+	}
+	return iu
+}
+
+// ClearEmergencyCategory clears the value of the "emergency_category" field.
+func (iu *ItemUpdate) ClearEmergencyCategory() *ItemUpdate {
+	iu.mutation.ClearEmergencyCategory()
+	return iu
+}
+
 // SetLifetimeWarranty sets the "lifetime_warranty" field.
 func (iu *ItemUpdate) SetLifetimeWarranty(b bool) *ItemUpdate {
 	iu.mutation.SetLifetimeWarranty(b)
@@ -883,6 +930,11 @@ func (iu *ItemUpdate) check() error {
 			return &ValidationError{Name: "barcode", err: fmt.Errorf(`ent: validator failed for field "Item.barcode": %w`, err)}
 		}
 	}
+	if v, ok := iu.mutation.EmergencyCategory(); ok {
+		if err := item.EmergencyCategoryValidator(v); err != nil {
+			return &ValidationError{Name: "emergency_category", err: fmt.Errorf(`ent: validator failed for field "Item.emergency_category": %w`, err)}
+		}
+	}
 	if v, ok := iu.mutation.WarrantyDetails(); ok {
 		if err := item.WarrantyDetailsValidator(v); err != nil {
 			return &ValidationError{Name: "warranty_details", err: fmt.Errorf(`ent: validator failed for field "Item.warranty_details": %w`, err)}
@@ -991,6 +1043,21 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if iu.mutation.BarcodeCleared() {
 		_spec.ClearField(item.FieldBarcode, field.TypeString)
+	}
+	if value, ok := iu.mutation.NetWeight(); ok {
+		_spec.SetField(item.FieldNetWeight, field.TypeInt, value)
+	}
+	if value, ok := iu.mutation.AddedNetWeight(); ok {
+		_spec.AddField(item.FieldNetWeight, field.TypeInt, value)
+	}
+	if iu.mutation.NetWeightCleared() {
+		_spec.ClearField(item.FieldNetWeight, field.TypeInt)
+	}
+	if value, ok := iu.mutation.EmergencyCategory(); ok {
+		_spec.SetField(item.FieldEmergencyCategory, field.TypeEnum, value)
+	}
+	if iu.mutation.EmergencyCategoryCleared() {
+		_spec.ClearField(item.FieldEmergencyCategory, field.TypeEnum)
 	}
 	if value, ok := iu.mutation.LifetimeWarranty(); ok {
 		_spec.SetField(item.FieldLifetimeWarranty, field.TypeBool, value)
@@ -1711,6 +1778,53 @@ func (iuo *ItemUpdateOne) ClearBarcode() *ItemUpdateOne {
 	return iuo
 }
 
+// SetNetWeight sets the "net_weight" field.
+func (iuo *ItemUpdateOne) SetNetWeight(i int) *ItemUpdateOne {
+	iuo.mutation.ResetNetWeight()
+	iuo.mutation.SetNetWeight(i)
+	return iuo
+}
+
+// SetNillableNetWeight sets the "net_weight" field if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableNetWeight(i *int) *ItemUpdateOne {
+	if i != nil {
+		iuo.SetNetWeight(*i)
+	}
+	return iuo
+}
+
+// AddNetWeight adds i to the "net_weight" field.
+func (iuo *ItemUpdateOne) AddNetWeight(i int) *ItemUpdateOne {
+	iuo.mutation.AddNetWeight(i)
+	return iuo
+}
+
+// ClearNetWeight clears the value of the "net_weight" field.
+func (iuo *ItemUpdateOne) ClearNetWeight() *ItemUpdateOne {
+	iuo.mutation.ClearNetWeight()
+	return iuo
+}
+
+// SetEmergencyCategory sets the "emergency_category" field.
+func (iuo *ItemUpdateOne) SetEmergencyCategory(ic item.EmergencyCategory) *ItemUpdateOne {
+	iuo.mutation.SetEmergencyCategory(ic)
+	return iuo
+}
+
+// SetNillableEmergencyCategory sets the "emergency_category" field if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableEmergencyCategory(ic *item.EmergencyCategory) *ItemUpdateOne {
+	if ic != nil {
+		iuo.SetEmergencyCategory(*ic)
+	}
+	return iuo
+}
+
+// ClearEmergencyCategory clears the value of the "emergency_category" field.
+func (iuo *ItemUpdateOne) ClearEmergencyCategory() *ItemUpdateOne {
+	iuo.mutation.ClearEmergencyCategory()
+	return iuo
+}
+
 // SetLifetimeWarranty sets the "lifetime_warranty" field.
 func (iuo *ItemUpdateOne) SetLifetimeWarranty(b bool) *ItemUpdateOne {
 	iuo.mutation.SetLifetimeWarranty(b)
@@ -2286,6 +2400,11 @@ func (iuo *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "barcode", err: fmt.Errorf(`ent: validator failed for field "Item.barcode": %w`, err)}
 		}
 	}
+	if v, ok := iuo.mutation.EmergencyCategory(); ok {
+		if err := item.EmergencyCategoryValidator(v); err != nil {
+			return &ValidationError{Name: "emergency_category", err: fmt.Errorf(`ent: validator failed for field "Item.emergency_category": %w`, err)}
+		}
+	}
 	if v, ok := iuo.mutation.WarrantyDetails(); ok {
 		if err := item.WarrantyDetailsValidator(v); err != nil {
 			return &ValidationError{Name: "warranty_details", err: fmt.Errorf(`ent: validator failed for field "Item.warranty_details": %w`, err)}
@@ -2411,6 +2530,21 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 	}
 	if iuo.mutation.BarcodeCleared() {
 		_spec.ClearField(item.FieldBarcode, field.TypeString)
+	}
+	if value, ok := iuo.mutation.NetWeight(); ok {
+		_spec.SetField(item.FieldNetWeight, field.TypeInt, value)
+	}
+	if value, ok := iuo.mutation.AddedNetWeight(); ok {
+		_spec.AddField(item.FieldNetWeight, field.TypeInt, value)
+	}
+	if iuo.mutation.NetWeightCleared() {
+		_spec.ClearField(item.FieldNetWeight, field.TypeInt)
+	}
+	if value, ok := iuo.mutation.EmergencyCategory(); ok {
+		_spec.SetField(item.FieldEmergencyCategory, field.TypeEnum, value)
+	}
+	if iuo.mutation.EmergencyCategoryCleared() {
+		_spec.ClearField(item.FieldEmergencyCategory, field.TypeEnum)
 	}
 	if value, ok := iuo.mutation.LifetimeWarranty(); ok {
 		_spec.SetField(item.FieldLifetimeWarranty, field.TypeBool, value)

@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -65,7 +66,9 @@ type (
 
 		// Barcode lets an item be created straight from a scan, so the code is
 		// registered without a second trip through the edit form.
-		Barcode string `json:"barcode" validate:"max=255"`
+		Barcode           string `json:"barcode" validate:"max=255"`
+		NetWeight         int    `json:"netWeight"`
+		EmergencyCategory string `json:"emergencyCategory" validate:"max=32"`
 
 		// The pantry numbers are settable on create for the same reason: when
 		// unpacking a shopping bag, going back into the edit form for every
@@ -102,6 +105,12 @@ type (
 		ExpiryDate types.Date `json:"expiryDate"`
 		MinStock   int        `json:"minStock"`
 		Barcode    string     `json:"barcode" validate:"max=255"`
+		// NetWeight is what one package holds, in grams, counting millilitres
+		// as grams. Zero means nobody has said, and the item then counts for
+		// nothing towards the emergency stockpile targets.
+		NetWeight int `json:"netWeight"`
+		// EmergencyCategory is one of the federal stockpiling groups, or empty.
+		EmergencyCategory string `json:"emergencyCategory" validate:"max=32"`
 
 		// Warranty
 		LifetimeWarranty bool       `json:"lifetimeWarranty"`
@@ -146,9 +155,11 @@ type (
 
 		// Pantry - kept on the summary so list views can flag expiring and
 		// low-stock items without fetching each item individually.
-		ExpiryDate types.Date `json:"expiryDate"`
-		MinStock   int        `json:"minStock"`
-		Barcode    string     `json:"barcode"`
+		ExpiryDate        types.Date `json:"expiryDate"`
+		MinStock          int        `json:"minStock"`
+		Barcode           string     `json:"barcode"`
+		NetWeight         int        `json:"netWeight"`
+		EmergencyCategory string     `json:"emergencyCategory"`
 
 		// Edges
 		Location *LocationSummary `json:"location,omitempty" extensions:"x-nullable,x-omitempty"`
@@ -228,9 +239,11 @@ func mapItemSummary(item *ent.Item) ItemSummary {
 		PurchasePrice: item.PurchasePrice,
 
 		// Pantry
-		ExpiryDate: types.DateFromTime(item.ExpiryDate),
-		MinStock:   item.MinStock,
-		Barcode:    item.Barcode,
+		ExpiryDate:        types.DateFromTime(item.ExpiryDate),
+		MinStock:          item.MinStock,
+		Barcode:           item.Barcode,
+		NetWeight:         item.NetWeight,
+		EmergencyCategory: string(item.EmergencyCategory),
 
 		// Edges
 		Location: location,
@@ -594,6 +607,21 @@ func (e *ItemsRepository) SetAssetID(ctx context.Context, gid uuid.UUID, id uuid
 	return err
 }
 
+// setStockpileFields writes the two emergency-stockpile fields, treating an
+// empty category as "none" rather than trying to store an empty enum value.
+func setStockpileFields(weight int, category string) (int, *string) {
+	if weight < 0 {
+		weight = 0
+	}
+
+	trimmed := strings.TrimSpace(category)
+	if trimmed == "" {
+		return weight, nil
+	}
+
+	return weight, &trimmed
+}
+
 func (e *ItemsRepository) Create(ctx context.Context, gid uuid.UUID, data ItemCreate) (ItemOut, error) {
 	q := e.db.Item.Create().
 		SetImportRef(data.ImportRef).
@@ -604,6 +632,14 @@ func (e *ItemsRepository) Create(ctx context.Context, gid uuid.UUID, data ItemCr
 		SetAssetID(int(data.AssetID)).
 		SetBarcode(data.Barcode).
 		SetMinStock(data.MinStock)
+
+	// A create builder has no Clear methods: a category left unset is simply
+	// null, which is what "not part of the stockpile" means.
+	weight, category := setStockpileFields(data.NetWeight, data.EmergencyCategory)
+	q.SetNetWeight(weight)
+	if category != nil {
+		q.SetEmergencyCategory(item.EmergencyCategory(*category))
+	}
 
 	// Same as in UpdateByGroup: an unset expiry date must be NULL, not the zero
 	// time, or the item shows up as long expired.
@@ -675,6 +711,16 @@ func (e *ItemsRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, data
 		SetSyncChildItemsLocations(data.SyncChildItemsLocations).
 		SetMinStock(data.MinStock).
 		SetBarcode(data.Barcode)
+
+	// Unlike on create, an emptied category has to be actively cleared here, or
+	// removing an item from the stockpile would silently leave it in.
+	weight, category := setStockpileFields(data.NetWeight, data.EmergencyCategory)
+	q.SetNetWeight(weight)
+	if category != nil {
+		q.SetEmergencyCategory(item.EmergencyCategory(*category))
+	} else {
+		q.ClearEmergencyCategory()
+	}
 
 	// An unset expiry date must be stored as NULL, not as the zero time.
 	// Otherwise every item saved without an expiry date looks like it expired

@@ -151,6 +151,9 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 255},
 		{Name: "currency", Type: field.TypeString, Default: "usd"},
 		{Name: "recipes_api_key", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "household_size", Type: field.TypeInt, Nullable: true},
+		{Name: "emergency_days", Type: field.TypeInt, Nullable: true},
+		{Name: "emergency_checklist", Type: field.TypeString, Nullable: true, Size: 2147483647},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
 	GroupsTable = &schema.Table{
@@ -202,6 +205,8 @@ var (
 		{Name: "expiry_date", Type: field.TypeTime, Nullable: true},
 		{Name: "min_stock", Type: field.TypeInt, Default: 0},
 		{Name: "barcode", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "net_weight", Type: field.TypeInt, Nullable: true},
+		{Name: "emergency_category", Type: field.TypeEnum, Nullable: true, Enums: []string{"drinks", "grains", "vegetables", "fruit", "dairy", "protein", "fats"}},
 		{Name: "lifetime_warranty", Type: field.TypeBool, Default: false},
 		{Name: "warranty_expires", Type: field.TypeTime, Nullable: true},
 		{Name: "warranty_details", Type: field.TypeString, Nullable: true, Size: 1000},
@@ -224,19 +229,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_groups_items",
-				Columns:    []*schema.Column{ItemsColumns[28]},
+				Columns:    []*schema.Column{ItemsColumns[30]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "items_items_children",
-				Columns:    []*schema.Column{ItemsColumns[29]},
+				Columns:    []*schema.Column{ItemsColumns[31]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_locations_items",
-				Columns:    []*schema.Column{ItemsColumns[30]},
+				Columns:    []*schema.Column{ItemsColumns[32]},
 				RefColumns: []*schema.Column{LocationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

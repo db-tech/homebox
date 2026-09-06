@@ -8,6 +8,7 @@
   import MdiChartLine from "~icons/mdi/chart-line";
   import MdiContentCopy from "~icons/mdi/content-copy";
   import MdiChefHat from "~icons/mdi/chef-hat";
+  import MdiShieldHome from "~icons/mdi/shield-home";
 
   definePageMeta({
     middleware: ["auth"],
@@ -152,10 +153,14 @@
 
     <!-- The terminal is a full-screen page with no way back into the app, so it
          needs a door somewhere. This is it. -->
-    <div>
+    <div class="flex flex-wrap gap-2">
       <NuxtLink to="/kiosk" class="btn btn-ghost btn-sm gap-2">
         <MdiTabletDashboard class="size-5" />
         {{ $t("pantry.kiosk.open") }}
+      </NuxtLink>
+      <NuxtLink to="/emergency" class="btn btn-ghost btn-sm gap-2">
+        <MdiShieldHome class="size-5" />
+        {{ $t("pantry.ideas.to_emergency") }}
       </NuxtLink>
     </div>
 

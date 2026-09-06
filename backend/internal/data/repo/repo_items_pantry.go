@@ -200,6 +200,24 @@ func (e *ItemsRepository) QueryPantry(ctx context.Context, gid uuid.UUID) ([]Ite
 	return mapItemsSummaryErr(q.All(ctx))
 }
 
+// QueryEmergencyStock returns the non-archived items assigned to one of the
+// federal stockpiling groups, whether or not anybody has said how much a
+// package holds.
+//
+// The unweighed ones are returned too, on purpose: the page has to be able to
+// say "these six are not being counted" rather than quietly leaving them out.
+func (e *ItemsRepository) QueryEmergencyStock(ctx context.Context, gid uuid.UUID) ([]ItemSummary, error) {
+	q := e.db.Item.Query().Where(
+		item.HasGroupWith(group.ID(gid)),
+		item.Archived(false),
+		item.EmergencyCategoryNotNil(),
+	).Order(
+		ent.Asc(item.FieldName),
+	).WithLabel().WithLocation()
+
+	return mapItemsSummaryErr(q.All(ctx))
+}
+
 // QueryByBarcode returns the non-archived items of a group carrying the given
 // barcode. A barcode is not enforced to be unique - the same product may sit in
 // two locations - so this returns every match and lets the caller decide.

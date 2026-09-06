@@ -231,6 +231,8 @@
       barcode: props.barcode,
       expiryDate: form.expiryDate ?? "",
       minStock: form.minStock ?? 0,
+      netWeight: 0,
+      emergencyCategory: "",
     };
 
     const { error, data } = await api.items.create(out);

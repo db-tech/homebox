@@ -141,6 +141,11 @@ func Barcode(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldBarcode, v))
 }
 
+// NetWeight applies equality check predicate on the "net_weight" field. It's identical to NetWeightEQ.
+func NetWeight(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldNetWeight, v))
+}
+
 // LifetimeWarranty applies equality check predicate on the "lifetime_warranty" field. It's identical to LifetimeWarrantyEQ.
 func LifetimeWarranty(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldLifetimeWarranty, v))
@@ -1059,6 +1064,86 @@ func BarcodeEqualFold(v string) predicate.Item {
 // BarcodeContainsFold applies the ContainsFold predicate on the "barcode" field.
 func BarcodeContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldBarcode, v))
+}
+
+// NetWeightEQ applies the EQ predicate on the "net_weight" field.
+func NetWeightEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldNetWeight, v))
+}
+
+// NetWeightNEQ applies the NEQ predicate on the "net_weight" field.
+func NetWeightNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldNetWeight, v))
+}
+
+// NetWeightIn applies the In predicate on the "net_weight" field.
+func NetWeightIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldNetWeight, vs...))
+}
+
+// NetWeightNotIn applies the NotIn predicate on the "net_weight" field.
+func NetWeightNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldNetWeight, vs...))
+}
+
+// NetWeightGT applies the GT predicate on the "net_weight" field.
+func NetWeightGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldNetWeight, v))
+}
+
+// NetWeightGTE applies the GTE predicate on the "net_weight" field.
+func NetWeightGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldNetWeight, v))
+}
+
+// NetWeightLT applies the LT predicate on the "net_weight" field.
+func NetWeightLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldNetWeight, v))
+}
+
+// NetWeightLTE applies the LTE predicate on the "net_weight" field.
+func NetWeightLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldNetWeight, v))
+}
+
+// NetWeightIsNil applies the IsNil predicate on the "net_weight" field.
+func NetWeightIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldNetWeight))
+}
+
+// NetWeightNotNil applies the NotNil predicate on the "net_weight" field.
+func NetWeightNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldNetWeight))
+}
+
+// EmergencyCategoryEQ applies the EQ predicate on the "emergency_category" field.
+func EmergencyCategoryEQ(v EmergencyCategory) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEmergencyCategory, v))
+}
+
+// EmergencyCategoryNEQ applies the NEQ predicate on the "emergency_category" field.
+func EmergencyCategoryNEQ(v EmergencyCategory) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEmergencyCategory, v))
+}
+
+// EmergencyCategoryIn applies the In predicate on the "emergency_category" field.
+func EmergencyCategoryIn(vs ...EmergencyCategory) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEmergencyCategory, vs...))
+}
+
+// EmergencyCategoryNotIn applies the NotIn predicate on the "emergency_category" field.
+func EmergencyCategoryNotIn(vs ...EmergencyCategory) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEmergencyCategory, vs...))
+}
+
+// EmergencyCategoryIsNil applies the IsNil predicate on the "emergency_category" field.
+func EmergencyCategoryIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEmergencyCategory))
+}
+
+// EmergencyCategoryNotNil applies the NotNil predicate on the "emergency_category" field.
+func EmergencyCategoryNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEmergencyCategory))
 }
 
 // LifetimeWarrantyEQ applies the EQ predicate on the "lifetime_warranty" field.

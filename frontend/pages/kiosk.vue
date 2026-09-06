@@ -153,15 +153,29 @@
   const pendingName = ref("");
   const editingName = ref(false);
 
+  /**
+   * Package size and stockpiling group for the batch being created.
+   *
+   * The size comes from the product database and is applied without asking:
+   * it is the manufacturer's stated content, not a guess. The group is not -
+   * a wrong group would distort the stockpile figure - so it is only ever
+   * inherited from another batch of the same product. Anything left without
+   * one shows up on the stockpile page as still to be sorted.
+   */
+  const pendingWeight = ref(0);
+  const pendingCategory = ref("");
+
   function resetFill() {
     fillStep.value = "none";
     pendingCode.value = "";
     pendingItems.value = [];
     pendingName.value = "";
     editingName.value = false;
+    pendingWeight.value = 0;
+    pendingCategory.value = "";
   }
 
-  async function fillScan(code: string, items: ItemSummary[], suggestion?: string) {
+  async function fillScan(code: string, items: ItemSummary[], suggestion?: string, weightHint = 0) {
     if (!location.value) {
       report({ kind: "error", title: t("pantry.kiosk.pick_location") });
       return;
@@ -176,6 +190,10 @@
 
     pendingCode.value = code;
     pendingItems.value = items;
+    // A new batch of a product already here inherits both, the same way it
+    // inherits the name.
+    pendingWeight.value = items[0]?.netWeight || weightHint;
+    pendingCategory.value = items[0]?.emergencyCategory ?? "";
 
     if (plan.kind === "choose") {
       fillStep.value = "choose";
@@ -270,6 +288,8 @@
       // batch created by a scan does not carry one. The low-stock view totals
       // the batches of a barcode, so a minimum set on any of them still counts.
       minStock: 0,
+      netWeight: pendingWeight.value,
+      emergencyCategory: pendingCategory.value,
     });
 
     if (error || !data) {
@@ -339,6 +359,8 @@
       pendingItems.value = data?.items ?? [];
       pendingCode.value = code;
       pendingName.value = pendingItems.value[0]?.name ?? lastName.value;
+      pendingWeight.value = pendingItems.value[0]?.netWeight ?? pendingWeight.value;
+      pendingCategory.value = pendingItems.value[0]?.emergencyCategory ?? pendingCategory.value;
       fillStep.value = "date";
     } finally {
       busy.value = false;
@@ -457,7 +479,7 @@
     const suggestion = data.suggestion?.found
       ? [data.suggestion.brand, data.suggestion.name].filter(Boolean).join(" ").trim()
       : "";
-    await fillScan(code, items, suggestion);
+    await fillScan(code, items, suggestion, data.suggestion?.amountGrams ?? 0);
   }
 
   const wedge = new WedgeReader();

@@ -258,6 +258,34 @@ func (ic *ItemCreate) SetNillableBarcode(s *string) *ItemCreate {
 	return ic
 }
 
+// SetNetWeight sets the "net_weight" field.
+func (ic *ItemCreate) SetNetWeight(i int) *ItemCreate {
+	ic.mutation.SetNetWeight(i)
+	return ic
+}
+
+// SetNillableNetWeight sets the "net_weight" field if the given value is not nil.
+func (ic *ItemCreate) SetNillableNetWeight(i *int) *ItemCreate {
+	if i != nil {
+		ic.SetNetWeight(*i)
+	}
+	return ic
+}
+
+// SetEmergencyCategory sets the "emergency_category" field.
+func (ic *ItemCreate) SetEmergencyCategory(value item.EmergencyCategory) *ItemCreate {
+	ic.mutation.SetEmergencyCategory(value)
+	return ic
+}
+
+// SetNillableEmergencyCategory sets the "emergency_category" field if the given value is not nil.
+func (ic *ItemCreate) SetNillableEmergencyCategory(value *item.EmergencyCategory) *ItemCreate {
+	if value != nil {
+		ic.SetEmergencyCategory(*value)
+	}
+	return ic
+}
+
 // SetLifetimeWarranty sets the "lifetime_warranty" field.
 func (ic *ItemCreate) SetLifetimeWarranty(b bool) *ItemCreate {
 	ic.mutation.SetLifetimeWarranty(b)
@@ -705,6 +733,11 @@ func (ic *ItemCreate) check() error {
 			return &ValidationError{Name: "barcode", err: fmt.Errorf(`ent: validator failed for field "Item.barcode": %w`, err)}
 		}
 	}
+	if v, ok := ic.mutation.EmergencyCategory(); ok {
+		if err := item.EmergencyCategoryValidator(v); err != nil {
+			return &ValidationError{Name: "emergency_category", err: fmt.Errorf(`ent: validator failed for field "Item.emergency_category": %w`, err)}
+		}
+	}
 	if _, ok := ic.mutation.LifetimeWarranty(); !ok {
 		return &ValidationError{Name: "lifetime_warranty", err: errors.New(`ent: missing required field "Item.lifetime_warranty"`)}
 	}
@@ -829,6 +862,14 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.Barcode(); ok {
 		_spec.SetField(item.FieldBarcode, field.TypeString, value)
 		_node.Barcode = value
+	}
+	if value, ok := ic.mutation.NetWeight(); ok {
+		_spec.SetField(item.FieldNetWeight, field.TypeInt, value)
+		_node.NetWeight = value
+	}
+	if value, ok := ic.mutation.EmergencyCategory(); ok {
+		_spec.SetField(item.FieldEmergencyCategory, field.TypeEnum, value)
+		_node.EmergencyCategory = value
 	}
 	if value, ok := ic.mutation.LifetimeWarranty(); ok {
 		_spec.SetField(item.FieldLifetimeWarranty, field.TypeBool, value)

@@ -54,6 +54,10 @@ type Item struct {
 	MinStock int `json:"min_stock,omitempty"`
 	// Barcode holds the value of the "barcode" field.
 	Barcode string `json:"barcode,omitempty"`
+	// NetWeight holds the value of the "net_weight" field.
+	NetWeight int `json:"net_weight,omitempty"`
+	// EmergencyCategory holds the value of the "emergency_category" field.
+	EmergencyCategory item.EmergencyCategory `json:"emergency_category,omitempty"`
 	// LifetimeWarranty holds the value of the "lifetime_warranty" field.
 	LifetimeWarranty bool `json:"lifetime_warranty,omitempty"`
 	// WarrantyExpires holds the value of the "warranty_expires" field.
@@ -204,9 +208,9 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case item.FieldPurchasePrice, item.FieldSoldPrice:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldQuantity, item.FieldAssetID, item.FieldMinStock:
+		case item.FieldQuantity, item.FieldAssetID, item.FieldMinStock, item.FieldNetWeight:
 			values[i] = new(sql.NullInt64)
-		case item.FieldName, item.FieldDescription, item.FieldImportRef, item.FieldNotes, item.FieldSerialNumber, item.FieldModelNumber, item.FieldManufacturer, item.FieldBarcode, item.FieldWarrantyDetails, item.FieldPurchaseFrom, item.FieldSoldTo, item.FieldSoldNotes:
+		case item.FieldName, item.FieldDescription, item.FieldImportRef, item.FieldNotes, item.FieldSerialNumber, item.FieldModelNumber, item.FieldManufacturer, item.FieldBarcode, item.FieldEmergencyCategory, item.FieldWarrantyDetails, item.FieldPurchaseFrom, item.FieldSoldTo, item.FieldSoldNotes:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldExpiryDate, item.FieldWarrantyExpires, item.FieldPurchaseTime, item.FieldSoldTime:
 			values[i] = new(sql.NullTime)
@@ -340,6 +344,18 @@ func (i *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field barcode", values[j])
 			} else if value.Valid {
 				i.Barcode = value.String
+			}
+		case item.FieldNetWeight:
+			if value, ok := values[j].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field net_weight", values[j])
+			} else if value.Valid {
+				i.NetWeight = int(value.Int64)
+			}
+		case item.FieldEmergencyCategory:
+			if value, ok := values[j].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field emergency_category", values[j])
+			} else if value.Valid {
+				i.EmergencyCategory = item.EmergencyCategory(value.String)
 			}
 		case item.FieldLifetimeWarranty:
 			if value, ok := values[j].(*sql.NullBool); !ok {
@@ -553,6 +569,12 @@ func (i *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("barcode=")
 	builder.WriteString(i.Barcode)
+	builder.WriteString(", ")
+	builder.WriteString("net_weight=")
+	builder.WriteString(fmt.Sprintf("%v", i.NetWeight))
+	builder.WriteString(", ")
+	builder.WriteString("emergency_category=")
+	builder.WriteString(fmt.Sprintf("%v", i.EmergencyCategory))
 	builder.WriteString(", ")
 	builder.WriteString("lifetime_warranty=")
 	builder.WriteString(fmt.Sprintf("%v", i.LifetimeWarranty))

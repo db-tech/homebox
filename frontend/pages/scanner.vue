@@ -3,6 +3,7 @@
   import { decodeFrame } from "~~/lib/barcode/decode";
   import { classifyScan } from "~~/lib/barcode/scan-target";
   import { WedgeReader, isEditingTarget } from "~~/lib/barcode/wedge";
+  import { categoryOrder } from "~~/lib/pantry/emergency";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
   import type { ConsumptionType } from "~~/lib/api/classes/pantry";
   import MdiMinus from "~icons/mdi/minus";
@@ -70,6 +71,12 @@
   const newExpiryDate = ref<Date | null>(null);
   const newMinStock = ref<number | null>(null);
 
+  // Package size and stockpiling group, for the emergency stockpile page. Both
+  // are pre-filled from the product database and both are editable here, so a
+  // wrong reading is corrected before it can distort that page's figures.
+  const newNetWeight = ref<number | null>(null);
+  const newCategory = ref("");
+
   const showNewItemForm = computed(() => !!scannedCode.value && !searching.value && matches.value.length === 0);
 
   const handleError = (error: unknown) => {
@@ -83,6 +90,8 @@
     suggestion.value = null;
     newName.value = "";
     newExpiryDate.value = null;
+    newNetWeight.value = null;
+    newCategory.value = "";
     searching.value = true;
 
     const { data, error } = await api.pantry.scan(code);
@@ -95,6 +104,8 @@
 
     matches.value = data.items ?? [];
     suggestion.value = data.suggestion ?? null;
+    newNetWeight.value = data.suggestion?.amountGrams || null;
+    newCategory.value = data.suggestion?.category ?? "";
 
     if (matches.value.length === 1 && scanMode.value !== "ask") {
       await record(matches.value[0], scanMode.value);
@@ -179,6 +190,8 @@
       barcode: scannedCode.value,
       expiryDate: newExpiryDate.value ?? "",
       minStock: newMinStock.value ?? 0,
+      netWeight: newNetWeight.value ?? 0,
+      emergencyCategory: newCategory.value,
     });
     creating.value = false;
 
@@ -198,6 +211,8 @@
     suggestion.value = null;
     newName.value = "";
     newExpiryDate.value = null;
+    newNetWeight.value = null;
+    newCategory.value = "";
     // The minimum stock is deliberately kept: a whole box of tins usually wants
     // the same one, and re-typing it per item is the sort of friction this
     // screen exists to remove.
@@ -616,14 +631,36 @@
                     <FormDateTapPicker v-model="newExpiryDate" />
                   </div>
 
-                  <div class="w-28">
-                    <input
-                      v-model.number="newMinStock"
-                      type="number"
-                      min="0"
-                      class="input input-bordered w-full"
-                      :placeholder="$t('items.min_stock')"
-                    />
+                  <div class="flex flex-wrap gap-2">
+                    <div class="w-28">
+                      <input
+                        v-model.number="newMinStock"
+                        type="number"
+                        min="0"
+                        class="input input-bordered w-full"
+                        :placeholder="$t('items.min_stock')"
+                      />
+                    </div>
+
+                    <!-- Both pre-filled from the product database and both
+                         correctable, because a wrong package size or a wrong
+                         group would quietly distort the stockpile page. -->
+                    <div class="w-32">
+                      <input
+                        v-model.number="newNetWeight"
+                        type="number"
+                        min="0"
+                        class="input input-bordered w-full"
+                        :placeholder="$t('items.net_weight')"
+                      />
+                    </div>
+
+                    <select v-model="newCategory" class="select select-bordered">
+                      <option value="">{{ $t("items.emergency_category_none") }}</option>
+                      <option v-for="c in categoryOrder" :key="c" :value="c">
+                        {{ $t(`pantry.emergency.category.${c}`) }}
+                      </option>
+                    </select>
                   </div>
 
                   <div class="flex flex-wrap justify-end gap-2">

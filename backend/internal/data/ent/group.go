@@ -28,6 +28,12 @@ type Group struct {
 	Currency string `json:"currency,omitempty"`
 	// RecipesAPIKey holds the value of the "recipes_api_key" field.
 	RecipesAPIKey string `json:"-"`
+	// HouseholdSize holds the value of the "household_size" field.
+	HouseholdSize int `json:"household_size,omitempty"`
+	// EmergencyDays holds the value of the "emergency_days" field.
+	EmergencyDays int `json:"emergency_days,omitempty"`
+	// EmergencyChecklist holds the value of the "emergency_checklist" field.
+	EmergencyChecklist string `json:"emergency_checklist,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -123,7 +129,9 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldName, group.FieldCurrency, group.FieldRecipesAPIKey:
+		case group.FieldHouseholdSize, group.FieldEmergencyDays:
+			values[i] = new(sql.NullInt64)
+		case group.FieldName, group.FieldCurrency, group.FieldRecipesAPIKey, group.FieldEmergencyChecklist:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -179,6 +187,24 @@ func (gr *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field recipes_api_key", values[i])
 			} else if value.Valid {
 				gr.RecipesAPIKey = value.String
+			}
+		case group.FieldHouseholdSize:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field household_size", values[i])
+			} else if value.Valid {
+				gr.HouseholdSize = int(value.Int64)
+			}
+		case group.FieldEmergencyDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field emergency_days", values[i])
+			} else if value.Valid {
+				gr.EmergencyDays = int(value.Int64)
+			}
+		case group.FieldEmergencyChecklist:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field emergency_checklist", values[i])
+			} else if value.Valid {
+				gr.EmergencyChecklist = value.String
 			}
 		default:
 			gr.selectValues.Set(columns[i], values[i])
@@ -264,6 +290,15 @@ func (gr *Group) String() string {
 	builder.WriteString(gr.Currency)
 	builder.WriteString(", ")
 	builder.WriteString("recipes_api_key=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("household_size=")
+	builder.WriteString(fmt.Sprintf("%v", gr.HouseholdSize))
+	builder.WriteString(", ")
+	builder.WriteString("emergency_days=")
+	builder.WriteString(fmt.Sprintf("%v", gr.EmergencyDays))
+	builder.WriteString(", ")
+	builder.WriteString("emergency_checklist=")
+	builder.WriteString(gr.EmergencyChecklist)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -25,6 +25,12 @@ const (
 	FieldCurrency = "currency"
 	// FieldRecipesAPIKey holds the string denoting the recipes_api_key field in the database.
 	FieldRecipesAPIKey = "recipes_api_key"
+	// FieldHouseholdSize holds the string denoting the household_size field in the database.
+	FieldHouseholdSize = "household_size"
+	// FieldEmergencyDays holds the string denoting the emergency_days field in the database.
+	FieldEmergencyDays = "emergency_days"
+	// FieldEmergencyChecklist holds the string denoting the emergency_checklist field in the database.
+	FieldEmergencyChecklist = "emergency_checklist"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
 	// EdgeLocations holds the string denoting the locations edge name in mutations.
@@ -100,6 +106,9 @@ var Columns = []string{
 	FieldName,
 	FieldCurrency,
 	FieldRecipesAPIKey,
+	FieldHouseholdSize,
+	FieldEmergencyDays,
+	FieldEmergencyChecklist,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -160,6 +169,21 @@ func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
 // ByRecipesAPIKey orders the results by the recipes_api_key field.
 func ByRecipesAPIKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRecipesAPIKey, opts...).ToFunc()
+}
+
+// ByHouseholdSize orders the results by the household_size field.
+func ByHouseholdSize(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHouseholdSize, opts...).ToFunc()
+}
+
+// ByEmergencyDays orders the results by the emergency_days field.
+func ByEmergencyDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmergencyDays, opts...).ToFunc()
+}
+
+// ByEmergencyChecklist orders the results by the emergency_checklist field.
+func ByEmergencyChecklist(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmergencyChecklist, opts...).ToFunc()
 }
 
 // ByUsersCount orders the results by users count.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { categoryOrder } from "~~/lib/pantry/emergency";
   import type { ItemAttachment, ItemField, ItemOut, ItemUpdate } from "~~/lib/api/types/data-contracts";
   import { AttachmentTypes } from "~~/lib/api/types/non-generated";
   import { useLabelStore } from "~~/stores/labels";
@@ -69,6 +70,8 @@
       barcode: item.value.barcode,
       expiryDate: item.value.expiryDate,
       minStock: item.value.minStock,
+      netWeight: item.value.netWeight,
+      emergencyCategory: item.value.emergencyCategory,
     });
 
     if (error) {
@@ -254,6 +257,11 @@
       label: "items.barcode",
       ref: "barcode",
       maxLength: 255,
+    },
+    {
+      type: "number",
+      label: "items.net_weight",
+      ref: "netWeight",
     },
   ];
 
@@ -678,6 +686,18 @@
           <template #title> {{ $t("items.pantry_details") }} </template>
           <p class="px-5 pb-2 text-xs">{{ $t("items.pantry_hint") }}</p>
           <div class="border-t border-gray-300 sm:p-0">
+            <div class="border-b border-gray-300 px-4 pb-4 pt-2 sm:px-6">
+              <label class="label" for="emergency-category">
+                <span class="label-text">{{ $t("items.emergency_category") }}</span>
+              </label>
+              <select id="emergency-category" v-model="item.emergencyCategory" class="select select-bordered w-full">
+                <option value="">{{ $t("items.emergency_category_none") }}</option>
+                <option v-for="c in categoryOrder" :key="c" :value="c">
+                  {{ $t(`pantry.emergency.category.${c}`) }}
+                </option>
+              </select>
+            </div>
+
             <div v-for="field in pantryFields" :key="field.ref" class="grid grid-cols-1 sm:divide-y sm:divide-gray-300">
               <div class="border-b border-gray-300 px-4 pb-4 pt-2 sm:px-6">
                 <FormTextField

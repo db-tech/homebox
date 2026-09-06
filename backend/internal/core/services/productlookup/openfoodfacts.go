@@ -22,7 +22,7 @@ import (
 // actually use are requested, which keeps the response small. It is a field on
 // the service rather than a constant so the tests can point it at a stub and
 // never touch the real service.
-const defaultEndpoint = "https://world.openfoodfacts.org/api/v2/product/%s.json?fields=product_name,product_name_de,brands,quantity"
+const defaultEndpoint = "https://world.openfoodfacts.org/api/v2/product/%s.json?fields=product_name,product_name_de,brands,quantity,categories_tags"
 
 // OpenFoodFacts asks clients to identify themselves so they can contact the
 // author about misbehaving traffic.
@@ -38,7 +38,14 @@ type Product struct {
 	Name   string `json:"name"`
 	Brand  string `json:"brand"`
 	Amount string `json:"amount"`
-	Source string `json:"source"`
+	// AmountGrams is Amount read as a number, counting millilitres as grams,
+	// or 0 when it could not be read. It pre-fills the item's net weight so a
+	// scanned tin counts towards the stockpile targets without being weighed.
+	AmountGrams int `json:"amountGrams"`
+	// Category is a suggested federal stockpiling group, or empty when the
+	// product's own categories do not say clearly enough.
+	Category string `json:"category"`
+	Source   string `json:"source"`
 }
 
 type Service struct {
@@ -65,10 +72,11 @@ func (s *Service) Enabled() bool {
 type offResponse struct {
 	Status  int `json:"status"`
 	Product struct {
-		ProductName   string `json:"product_name"`
-		ProductNameDE string `json:"product_name_de"`
-		Brands        string `json:"brands"`
-		Quantity      string `json:"quantity"`
+		ProductName    string   `json:"product_name"`
+		ProductNameDE  string   `json:"product_name_de"`
+		Brands         string   `json:"brands"`
+		Quantity       string   `json:"quantity"`
+		CategoriesTags []string `json:"categories_tags"`
 	} `json:"product"`
 }
 
@@ -128,11 +136,13 @@ func (s *Service) Lookup(ctx context.Context, barcode string) (Product, error) {
 	}
 
 	return Product{
-		Found:  true,
-		Name:   name,
-		Brand:  firstBrand(payload.Product.Brands),
-		Amount: strings.TrimSpace(payload.Product.Quantity),
-		Source: "openfoodfacts",
+		Found:       true,
+		Name:        name,
+		Brand:       firstBrand(payload.Product.Brands),
+		Amount:      strings.TrimSpace(payload.Product.Quantity),
+		AmountGrams: parseAmountGrams(payload.Product.Quantity),
+		Category:    guessCategory(payload.Product.CategoriesTags),
+		Source:      "openfoodfacts",
 	}, nil
 }
 

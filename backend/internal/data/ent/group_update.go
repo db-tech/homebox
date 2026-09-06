@@ -90,6 +90,80 @@ func (gu *GroupUpdate) ClearRecipesAPIKey() *GroupUpdate {
 	return gu
 }
 
+// SetHouseholdSize sets the "household_size" field.
+func (gu *GroupUpdate) SetHouseholdSize(i int) *GroupUpdate {
+	gu.mutation.ResetHouseholdSize()
+	gu.mutation.SetHouseholdSize(i)
+	return gu
+}
+
+// SetNillableHouseholdSize sets the "household_size" field if the given value is not nil.
+func (gu *GroupUpdate) SetNillableHouseholdSize(i *int) *GroupUpdate {
+	if i != nil {
+		gu.SetHouseholdSize(*i)
+	}
+	return gu
+}
+
+// AddHouseholdSize adds i to the "household_size" field.
+func (gu *GroupUpdate) AddHouseholdSize(i int) *GroupUpdate {
+	gu.mutation.AddHouseholdSize(i)
+	return gu
+}
+
+// ClearHouseholdSize clears the value of the "household_size" field.
+func (gu *GroupUpdate) ClearHouseholdSize() *GroupUpdate {
+	gu.mutation.ClearHouseholdSize()
+	return gu
+}
+
+// SetEmergencyDays sets the "emergency_days" field.
+func (gu *GroupUpdate) SetEmergencyDays(i int) *GroupUpdate {
+	gu.mutation.ResetEmergencyDays()
+	gu.mutation.SetEmergencyDays(i)
+	return gu
+}
+
+// SetNillableEmergencyDays sets the "emergency_days" field if the given value is not nil.
+func (gu *GroupUpdate) SetNillableEmergencyDays(i *int) *GroupUpdate {
+	if i != nil {
+		gu.SetEmergencyDays(*i)
+	}
+	return gu
+}
+
+// AddEmergencyDays adds i to the "emergency_days" field.
+func (gu *GroupUpdate) AddEmergencyDays(i int) *GroupUpdate {
+	gu.mutation.AddEmergencyDays(i)
+	return gu
+}
+
+// ClearEmergencyDays clears the value of the "emergency_days" field.
+func (gu *GroupUpdate) ClearEmergencyDays() *GroupUpdate {
+	gu.mutation.ClearEmergencyDays()
+	return gu
+}
+
+// SetEmergencyChecklist sets the "emergency_checklist" field.
+func (gu *GroupUpdate) SetEmergencyChecklist(s string) *GroupUpdate {
+	gu.mutation.SetEmergencyChecklist(s)
+	return gu
+}
+
+// SetNillableEmergencyChecklist sets the "emergency_checklist" field if the given value is not nil.
+func (gu *GroupUpdate) SetNillableEmergencyChecklist(s *string) *GroupUpdate {
+	if s != nil {
+		gu.SetEmergencyChecklist(*s)
+	}
+	return gu
+}
+
+// ClearEmergencyChecklist clears the value of the "emergency_checklist" field.
+func (gu *GroupUpdate) ClearEmergencyChecklist() *GroupUpdate {
+	gu.mutation.ClearEmergencyChecklist()
+	return gu
+}
+
 // AddUserIDs adds the "users" edge to the User entity by IDs.
 func (gu *GroupUpdate) AddUserIDs(ids ...uuid.UUID) *GroupUpdate {
 	gu.mutation.AddUserIDs(ids...)
@@ -424,6 +498,30 @@ func (gu *GroupUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if gu.mutation.RecipesAPIKeyCleared() {
 		_spec.ClearField(group.FieldRecipesAPIKey, field.TypeString)
+	}
+	if value, ok := gu.mutation.HouseholdSize(); ok {
+		_spec.SetField(group.FieldHouseholdSize, field.TypeInt, value)
+	}
+	if value, ok := gu.mutation.AddedHouseholdSize(); ok {
+		_spec.AddField(group.FieldHouseholdSize, field.TypeInt, value)
+	}
+	if gu.mutation.HouseholdSizeCleared() {
+		_spec.ClearField(group.FieldHouseholdSize, field.TypeInt)
+	}
+	if value, ok := gu.mutation.EmergencyDays(); ok {
+		_spec.SetField(group.FieldEmergencyDays, field.TypeInt, value)
+	}
+	if value, ok := gu.mutation.AddedEmergencyDays(); ok {
+		_spec.AddField(group.FieldEmergencyDays, field.TypeInt, value)
+	}
+	if gu.mutation.EmergencyDaysCleared() {
+		_spec.ClearField(group.FieldEmergencyDays, field.TypeInt)
+	}
+	if value, ok := gu.mutation.EmergencyChecklist(); ok {
+		_spec.SetField(group.FieldEmergencyChecklist, field.TypeString, value)
+	}
+	if gu.mutation.EmergencyChecklistCleared() {
+		_spec.ClearField(group.FieldEmergencyChecklist, field.TypeString)
 	}
 	if gu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -814,6 +912,80 @@ func (guo *GroupUpdateOne) ClearRecipesAPIKey() *GroupUpdateOne {
 	return guo
 }
 
+// SetHouseholdSize sets the "household_size" field.
+func (guo *GroupUpdateOne) SetHouseholdSize(i int) *GroupUpdateOne {
+	guo.mutation.ResetHouseholdSize()
+	guo.mutation.SetHouseholdSize(i)
+	return guo
+}
+
+// SetNillableHouseholdSize sets the "household_size" field if the given value is not nil.
+func (guo *GroupUpdateOne) SetNillableHouseholdSize(i *int) *GroupUpdateOne {
+	if i != nil {
+		guo.SetHouseholdSize(*i)
+	}
+	return guo
+}
+
+// AddHouseholdSize adds i to the "household_size" field.
+func (guo *GroupUpdateOne) AddHouseholdSize(i int) *GroupUpdateOne {
+	guo.mutation.AddHouseholdSize(i)
+	return guo
+}
+
+// ClearHouseholdSize clears the value of the "household_size" field.
+func (guo *GroupUpdateOne) ClearHouseholdSize() *GroupUpdateOne {
+	guo.mutation.ClearHouseholdSize()
+	return guo
+}
+
+// SetEmergencyDays sets the "emergency_days" field.
+func (guo *GroupUpdateOne) SetEmergencyDays(i int) *GroupUpdateOne {
+	guo.mutation.ResetEmergencyDays()
+	guo.mutation.SetEmergencyDays(i)
+	return guo
+}
+
+// SetNillableEmergencyDays sets the "emergency_days" field if the given value is not nil.
+func (guo *GroupUpdateOne) SetNillableEmergencyDays(i *int) *GroupUpdateOne {
+	if i != nil {
+		guo.SetEmergencyDays(*i)
+	}
+	return guo
+}
+
+// AddEmergencyDays adds i to the "emergency_days" field.
+func (guo *GroupUpdateOne) AddEmergencyDays(i int) *GroupUpdateOne {
+	guo.mutation.AddEmergencyDays(i)
+	return guo
+}
+
+// ClearEmergencyDays clears the value of the "emergency_days" field.
+func (guo *GroupUpdateOne) ClearEmergencyDays() *GroupUpdateOne {
+	guo.mutation.ClearEmergencyDays()
+	return guo
+}
+
+// SetEmergencyChecklist sets the "emergency_checklist" field.
+func (guo *GroupUpdateOne) SetEmergencyChecklist(s string) *GroupUpdateOne {
+	guo.mutation.SetEmergencyChecklist(s)
+	return guo
+}
+
+// SetNillableEmergencyChecklist sets the "emergency_checklist" field if the given value is not nil.
+func (guo *GroupUpdateOne) SetNillableEmergencyChecklist(s *string) *GroupUpdateOne {
+	if s != nil {
+		guo.SetEmergencyChecklist(*s)
+	}
+	return guo
+}
+
+// ClearEmergencyChecklist clears the value of the "emergency_checklist" field.
+func (guo *GroupUpdateOne) ClearEmergencyChecklist() *GroupUpdateOne {
+	guo.mutation.ClearEmergencyChecklist()
+	return guo
+}
+
 // AddUserIDs adds the "users" edge to the User entity by IDs.
 func (guo *GroupUpdateOne) AddUserIDs(ids ...uuid.UUID) *GroupUpdateOne {
 	guo.mutation.AddUserIDs(ids...)
@@ -1178,6 +1350,30 @@ func (guo *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error
 	}
 	if guo.mutation.RecipesAPIKeyCleared() {
 		_spec.ClearField(group.FieldRecipesAPIKey, field.TypeString)
+	}
+	if value, ok := guo.mutation.HouseholdSize(); ok {
+		_spec.SetField(group.FieldHouseholdSize, field.TypeInt, value)
+	}
+	if value, ok := guo.mutation.AddedHouseholdSize(); ok {
+		_spec.AddField(group.FieldHouseholdSize, field.TypeInt, value)
+	}
+	if guo.mutation.HouseholdSizeCleared() {
+		_spec.ClearField(group.FieldHouseholdSize, field.TypeInt)
+	}
+	if value, ok := guo.mutation.EmergencyDays(); ok {
+		_spec.SetField(group.FieldEmergencyDays, field.TypeInt, value)
+	}
+	if value, ok := guo.mutation.AddedEmergencyDays(); ok {
+		_spec.AddField(group.FieldEmergencyDays, field.TypeInt, value)
+	}
+	if guo.mutation.EmergencyDaysCleared() {
+		_spec.ClearField(group.FieldEmergencyDays, field.TypeInt)
+	}
+	if value, ok := guo.mutation.EmergencyChecklist(); ok {
+		_spec.SetField(group.FieldEmergencyChecklist, field.TypeString, value)
+	}
+	if guo.mutation.EmergencyChecklistCleared() {
+		_spec.ClearField(group.FieldEmergencyChecklist, field.TypeString)
 	}
 	if guo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{

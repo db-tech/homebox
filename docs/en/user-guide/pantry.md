@@ -201,6 +201,72 @@ You can also type a barcode into an item's **Pantry** card in the edit form. The
 same product in two places is fine — barcodes are not required to be unique, and
 a scan that matches several items simply lists them all.
 
+## Emergency stock
+
+Germany's federal government publishes how much food a household should keep at
+home. **Pantry → Emergency stock** (`/emergency`) measures your actual pantry
+against it, and carries the official checklist for everything that is not food.
+
+### The figures
+
+Per person for ten days, at 2,200 kcal a day:
+
+| | |
+| --- | --- |
+| Drinks | 20 l |
+| Vegetables, mushrooms | 4.0 kg |
+| Grains, bread, potatoes | 3.3 kg |
+| Fruit | 2.5 kg |
+| Milk and dairy | 2.5 kg |
+| Eggs, meat, fish | 1.2 kg |
+| Fats and oil | 330 g |
+
+Set how many people and how many days at the top; the targets scale. Ten days is
+what the advice builds to, but three is described as already worth having, which
+is why the number is adjustable.
+
+Source: the *Ernährungsvorsorge* portal of the Federal Ministry of Food and
+Agriculture, and the BBK guide *Vorsorgen für Krisen und Katastrophen*. The
+twenty litres are 1.5 l to drink plus 0.5 l to cook with, per person per day.
+
+### Counting a cupboard in kilograms
+
+The recommendation is in kilograms and litres; Homebox counts packages. Two
+fields bridge that, both on the item's **Pantry** card:
+
+- **Package size in grams** — what one tin or bottle holds. Millilitres count as
+  grams: water is a gram per millilitre and for a stockpile target the rest is
+  close enough that a conversion table would be false precision.
+- **Emergency stock group** — which of the seven the item counts towards, or
+  *not part of the emergency stock*, which is the default and what every tool and
+  appliance stays on.
+
+Scanning fills the package size in from the product database, which publishes it
+for most barcodes. On the scanner page the group is suggested too and both can
+be corrected before the item is created. In the terminal only the size is taken
+automatically, because it is the manufacturer's stated content rather than a
+guess; a new batch of a product already in the pantry inherits its group.
+
+An item with **no package size counts as nothing**, and so does one with no
+group. Neither is estimated. The page lists both sets under **Still to sort out**
+with a link straight to each item, because a figure you cannot trust is worse
+than a figure that admits what it is missing.
+
+### The checklist
+
+The second half of the page is the BBK's own checklist — medicine cabinet,
+hygiene, light and warmth, information, fire safety, go bag, documents. Ticks are
+stored per group and saved as you go.
+
+The German wording is quoted from the official publication rather than rewritten;
+the English alongside is a plain reading aid, not an official translation.
+
+### Living out of the stockpile
+
+The advice is explicitly to *use* the stock and rotate it rather than seal it
+away. That is what the expiry warnings already do, so a stockpile built here
+keeps itself current as long as you scan things out of it.
+
 ## What can I cook?
 
 **Pantry → What can I cook?** turns what is actually in the cupboard into two or

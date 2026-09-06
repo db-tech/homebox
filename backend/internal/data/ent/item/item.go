@@ -3,6 +3,7 @@
 package item
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -49,6 +50,10 @@ const (
 	FieldMinStock = "min_stock"
 	// FieldBarcode holds the string denoting the barcode field in the database.
 	FieldBarcode = "barcode"
+	// FieldNetWeight holds the string denoting the net_weight field in the database.
+	FieldNetWeight = "net_weight"
+	// FieldEmergencyCategory holds the string denoting the emergency_category field in the database.
+	FieldEmergencyCategory = "emergency_category"
 	// FieldLifetimeWarranty holds the string denoting the lifetime_warranty field in the database.
 	FieldLifetimeWarranty = "lifetime_warranty"
 	// FieldWarrantyExpires holds the string denoting the warranty_expires field in the database.
@@ -166,6 +171,8 @@ var Columns = []string{
 	FieldExpiryDate,
 	FieldMinStock,
 	FieldBarcode,
+	FieldNetWeight,
+	FieldEmergencyCategory,
 	FieldLifetimeWarranty,
 	FieldWarrantyExpires,
 	FieldWarrantyDetails,
@@ -255,6 +262,34 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// EmergencyCategory defines the type for the "emergency_category" enum field.
+type EmergencyCategory string
+
+// EmergencyCategory values.
+const (
+	EmergencyCategoryDrinks     EmergencyCategory = "drinks"
+	EmergencyCategoryGrains     EmergencyCategory = "grains"
+	EmergencyCategoryVegetables EmergencyCategory = "vegetables"
+	EmergencyCategoryFruit      EmergencyCategory = "fruit"
+	EmergencyCategoryDairy      EmergencyCategory = "dairy"
+	EmergencyCategoryProtein    EmergencyCategory = "protein"
+	EmergencyCategoryFats       EmergencyCategory = "fats"
+)
+
+func (ec EmergencyCategory) String() string {
+	return string(ec)
+}
+
+// EmergencyCategoryValidator is a validator for the "emergency_category" field enum values. It is called by the builders before save.
+func EmergencyCategoryValidator(ec EmergencyCategory) error {
+	switch ec {
+	case EmergencyCategoryDrinks, EmergencyCategoryGrains, EmergencyCategoryVegetables, EmergencyCategoryFruit, EmergencyCategoryDairy, EmergencyCategoryProtein, EmergencyCategoryFats:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for emergency_category field: %q", ec)
+	}
+}
 
 // OrderOption defines the ordering options for the Item queries.
 type OrderOption func(*sql.Selector)
@@ -347,6 +382,16 @@ func ByMinStock(opts ...sql.OrderTermOption) OrderOption {
 // ByBarcode orders the results by the barcode field.
 func ByBarcode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBarcode, opts...).ToFunc()
+}
+
+// ByNetWeight orders the results by the net_weight field.
+func ByNetWeight(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNetWeight, opts...).ToFunc()
+}
+
+// ByEmergencyCategory orders the results by the emergency_category field.
+func ByEmergencyCategory(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmergencyCategory, opts...).ToFunc()
 }
 
 // ByLifetimeWarranty orders the results by the lifetime_warranty field.

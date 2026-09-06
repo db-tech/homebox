@@ -3,6 +3,8 @@ import type {
   ConsumptionCreate,
   ConsumptionEntry,
   ConsumptionSummary,
+  EmergencyResult,
+  EmergencySettings,
   ItemSummary,
   MealIdeasResult,
   ScanResult,
@@ -68,6 +70,16 @@ export class PantryAPI extends BaseAPI {
    */
   mealIdeas() {
     return this.http.get<MealIdeasResult>({ url: route("/pantry/meal-ideas") });
+  }
+
+  /** How the pantry measures up against the federal stockpiling recommendation. */
+  emergency() {
+    return this.http.get<EmergencyResult>({ url: route("/pantry/emergency") });
+  }
+
+  /** Household size, number of days, and the ticked non-food checklist. */
+  setEmergency(data: EmergencySettings) {
+    return this.http.put<EmergencySettings, EmergencySettings>({ url: route("/pantry/emergency"), body: data });
   }
 
   deleteEntry(entryId: string) {

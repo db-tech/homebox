@@ -188,6 +188,8 @@
         "details": "Details",
         "drag_and_drop": "Drag and drop files here or click to select files",
         "edit_details": "Edit Details",
+        "emergency_category": "Emergency stock group",
+        "emergency_category_none": "Not part of the emergency stock",
         "expiry_date": "Expiry Date",
         "field_selector": "Field Selector",
         "field_value": "Field Value",
@@ -204,6 +206,7 @@
         "model_number": "Model Number",
         "name": "Name",
         "negate_labels": "Negate Selected Labels",
+        "net_weight": "Package size in grams",
         "next_page": "Next Page",
         "no_results": "No Items Found",
         "notes": "Notes",
@@ -356,6 +359,33 @@
             "total_consumed": "Consumed",
             "total_restocked": "Restocked"
         },
+        "emergency": {
+            "category": {
+                "dairy": "Milk and dairy",
+                "drinks": "Drinks",
+                "fats": "Fats and oil",
+                "fruit": "Fruit",
+                "grains": "Grains, bread, potatoes",
+                "protein": "Eggs, meat, fish",
+                "vegetables": "Vegetables, mushrooms"
+            },
+            "checklist_subtitle": "The federal checklist for everything that is not food",
+            "checklist_title": "Checklist",
+            "days": "Days",
+            "failed": "Could not load the stockpile figures",
+            "food_subtitle": "Measured against the official German recommendation",
+            "food_title": "Food and drink",
+            "gaps_subtitle": "These are in the pantry but are not being counted yet",
+            "gaps_title": "Still to sort out",
+            "missing": "short",
+            "overall": "of the recommendation covered",
+            "people": "People",
+            "save_failed": "Could not save that",
+            "source": "Source: Bundesamt für Bevölkerungsschutz und Katastrophenhilfe (BBK) and the Ernährungsvorsorge portal. The German wording is quoted from the official checklist.",
+            "title": "Emergency stock",
+            "uncategorised": "No group yet - pick one and they start counting",
+            "unweighed": "No package size - they count as nothing until one is set"
+        },
         "expiring": {
             "days": "{n} days",
             "days_left": "{n} days left",
@@ -376,6 +406,7 @@
             "privacy": "Sends the name, quantity and days left of your pantry items to Anthropic, and nothing else - no locations, no prices, nothing tied to you. Only when you press the button.",
             "subtitle": "Dishes built around whatever goes off first",
             "title": "What can I cook?",
+            "to_emergency": "Emergency stock",
             "to_settings": "Set up in settings",
             "uses": "Uses"
         },

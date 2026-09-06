@@ -81,6 +81,21 @@ func RecipesAPIKey(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRecipesAPIKey, v))
 }
 
+// HouseholdSize applies equality check predicate on the "household_size" field. It's identical to HouseholdSizeEQ.
+func HouseholdSize(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHouseholdSize, v))
+}
+
+// EmergencyDays applies equality check predicate on the "emergency_days" field. It's identical to EmergencyDaysEQ.
+func EmergencyDays(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldEmergencyDays, v))
+}
+
+// EmergencyChecklist applies equality check predicate on the "emergency_checklist" field. It's identical to EmergencyChecklistEQ.
+func EmergencyChecklist(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldEmergencyChecklist, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -364,6 +379,181 @@ func RecipesAPIKeyEqualFold(v string) predicate.Group {
 // RecipesAPIKeyContainsFold applies the ContainsFold predicate on the "recipes_api_key" field.
 func RecipesAPIKeyContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldRecipesAPIKey, v))
+}
+
+// HouseholdSizeEQ applies the EQ predicate on the "household_size" field.
+func HouseholdSizeEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldHouseholdSize, v))
+}
+
+// HouseholdSizeNEQ applies the NEQ predicate on the "household_size" field.
+func HouseholdSizeNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldHouseholdSize, v))
+}
+
+// HouseholdSizeIn applies the In predicate on the "household_size" field.
+func HouseholdSizeIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldHouseholdSize, vs...))
+}
+
+// HouseholdSizeNotIn applies the NotIn predicate on the "household_size" field.
+func HouseholdSizeNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldHouseholdSize, vs...))
+}
+
+// HouseholdSizeGT applies the GT predicate on the "household_size" field.
+func HouseholdSizeGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldHouseholdSize, v))
+}
+
+// HouseholdSizeGTE applies the GTE predicate on the "household_size" field.
+func HouseholdSizeGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldHouseholdSize, v))
+}
+
+// HouseholdSizeLT applies the LT predicate on the "household_size" field.
+func HouseholdSizeLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldHouseholdSize, v))
+}
+
+// HouseholdSizeLTE applies the LTE predicate on the "household_size" field.
+func HouseholdSizeLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldHouseholdSize, v))
+}
+
+// HouseholdSizeIsNil applies the IsNil predicate on the "household_size" field.
+func HouseholdSizeIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldHouseholdSize))
+}
+
+// HouseholdSizeNotNil applies the NotNil predicate on the "household_size" field.
+func HouseholdSizeNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldHouseholdSize))
+}
+
+// EmergencyDaysEQ applies the EQ predicate on the "emergency_days" field.
+func EmergencyDaysEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldEmergencyDays, v))
+}
+
+// EmergencyDaysNEQ applies the NEQ predicate on the "emergency_days" field.
+func EmergencyDaysNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldEmergencyDays, v))
+}
+
+// EmergencyDaysIn applies the In predicate on the "emergency_days" field.
+func EmergencyDaysIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldEmergencyDays, vs...))
+}
+
+// EmergencyDaysNotIn applies the NotIn predicate on the "emergency_days" field.
+func EmergencyDaysNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldEmergencyDays, vs...))
+}
+
+// EmergencyDaysGT applies the GT predicate on the "emergency_days" field.
+func EmergencyDaysGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldEmergencyDays, v))
+}
+
+// EmergencyDaysGTE applies the GTE predicate on the "emergency_days" field.
+func EmergencyDaysGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldEmergencyDays, v))
+}
+
+// EmergencyDaysLT applies the LT predicate on the "emergency_days" field.
+func EmergencyDaysLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldEmergencyDays, v))
+}
+
+// EmergencyDaysLTE applies the LTE predicate on the "emergency_days" field.
+func EmergencyDaysLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldEmergencyDays, v))
+}
+
+// EmergencyDaysIsNil applies the IsNil predicate on the "emergency_days" field.
+func EmergencyDaysIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldEmergencyDays))
+}
+
+// EmergencyDaysNotNil applies the NotNil predicate on the "emergency_days" field.
+func EmergencyDaysNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldEmergencyDays))
+}
+
+// EmergencyChecklistEQ applies the EQ predicate on the "emergency_checklist" field.
+func EmergencyChecklistEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistNEQ applies the NEQ predicate on the "emergency_checklist" field.
+func EmergencyChecklistNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistIn applies the In predicate on the "emergency_checklist" field.
+func EmergencyChecklistIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldEmergencyChecklist, vs...))
+}
+
+// EmergencyChecklistNotIn applies the NotIn predicate on the "emergency_checklist" field.
+func EmergencyChecklistNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldEmergencyChecklist, vs...))
+}
+
+// EmergencyChecklistGT applies the GT predicate on the "emergency_checklist" field.
+func EmergencyChecklistGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistGTE applies the GTE predicate on the "emergency_checklist" field.
+func EmergencyChecklistGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistLT applies the LT predicate on the "emergency_checklist" field.
+func EmergencyChecklistLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistLTE applies the LTE predicate on the "emergency_checklist" field.
+func EmergencyChecklistLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistContains applies the Contains predicate on the "emergency_checklist" field.
+func EmergencyChecklistContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistHasPrefix applies the HasPrefix predicate on the "emergency_checklist" field.
+func EmergencyChecklistHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistHasSuffix applies the HasSuffix predicate on the "emergency_checklist" field.
+func EmergencyChecklistHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistIsNil applies the IsNil predicate on the "emergency_checklist" field.
+func EmergencyChecklistIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldEmergencyChecklist))
+}
+
+// EmergencyChecklistNotNil applies the NotNil predicate on the "emergency_checklist" field.
+func EmergencyChecklistNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldEmergencyChecklist))
+}
+
+// EmergencyChecklistEqualFold applies the EqualFold predicate on the "emergency_checklist" field.
+func EmergencyChecklistEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldEmergencyChecklist, v))
+}
+
+// EmergencyChecklistContainsFold applies the ContainsFold predicate on the "emergency_checklist" field.
+func EmergencyChecklistContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldEmergencyChecklist, v))
 }
 
 // HasUsers applies the HasEdge predicate on the "users" edge.

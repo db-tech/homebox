@@ -18,6 +18,10 @@ export interface CurrenciesCurrency {
 }
 
 export interface ProductlookupProduct {
+  /** The package size read as grams, or 0 when it could not be read. */
+  amountGrams: number;
+  /** A suggested federal stockpiling group, or "" when nothing matched clearly. */
+  category: string;
   amount: string;
   brand: string;
   found: boolean;
@@ -112,6 +116,10 @@ export interface ItemAttachmentUpdate {
 }
 
 export interface ItemCreate {
+  /** What one package holds, in grams; millilitres count as grams. 0 means nobody has said. */
+  netWeight: number;
+  /** One of the federal stockpiling groups, or "" when it is not part of the stockpile. */
+  emergencyCategory: string;
   /**
    * Barcode lets an item be created straight from a scan, so the code is
    * registered without a second trip through the edit form.
@@ -148,6 +156,10 @@ export interface ItemField {
 }
 
 export interface ItemOut {
+  /** What one package holds, in grams; millilitres count as grams. 0 means nobody has said. */
+  netWeight: number;
+  /** One of the federal stockpiling groups, or "" when it is not part of the stockpile. */
+  emergencyCategory: string;
   archived: boolean;
   /** @example "0" */
   assetId: string;
@@ -205,6 +217,10 @@ export interface ItemPath {
 }
 
 export interface ItemSummary {
+  /** What one package holds, in grams; millilitres count as grams. 0 means nobody has said. */
+  netWeight: number;
+  /** One of the federal stockpiling groups, or "" when it is not part of the stockpile. */
+  emergencyCategory: string;
   archived: boolean;
   /** @example "0" */
   assetId: string;
@@ -235,6 +251,10 @@ export enum ItemType {
 }
 
 export interface ItemUpdate {
+  /** What one package holds, in grams; millilitres count as grams. 0 means nobody has said. */
+  netWeight: number;
+  /** One of the federal stockpiling groups, or "" when it is not part of the stockpile. */
+  emergencyCategory: string;
   archived: boolean;
   assetId: string;
   /** @maxLength 255 */
@@ -565,6 +585,41 @@ export interface MealIdeasIdea {
 
 export interface MealIdeasResult {
   ideas: MealIdeasIdea[];
+}
+
+export interface EmergencyLine {
+  category: string;
+  targetGrams: number;
+  stockGrams: number;
+  missingGrams: number;
+  percent: number;
+}
+
+export interface EmergencyBalance {
+  people: number;
+  days: number;
+  lines: EmergencyLine[];
+  percent: number;
+}
+
+export interface EmergencyItem {
+  id: string;
+  name: string;
+}
+
+export interface EmergencyResult {
+  balance: EmergencyBalance;
+  /** In a group but with no package size, so counted as nothing. */
+  unweighed: EmergencyItem[];
+  /** Pantry items not in any group yet. */
+  uncategorised: EmergencyItem[];
+  checklist: string[];
+}
+
+export interface EmergencySettings {
+  people: number;
+  days: number;
+  checklist: string[];
 }
 
 export interface ScanResult {

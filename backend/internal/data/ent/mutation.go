@@ -3112,6 +3112,11 @@ type GroupMutation struct {
 	name                     *string
 	currency                 *string
 	recipes_api_key          *string
+	household_size           *int
+	addhousehold_size        *int
+	emergency_days           *int
+	addemergency_days        *int
+	emergency_checklist      *string
 	clearedFields            map[string]struct{}
 	users                    map[uuid.UUID]struct{}
 	removedusers             map[uuid.UUID]struct{}
@@ -3434,6 +3439,195 @@ func (m *GroupMutation) RecipesAPIKeyCleared() bool {
 func (m *GroupMutation) ResetRecipesAPIKey() {
 	m.recipes_api_key = nil
 	delete(m.clearedFields, group.FieldRecipesAPIKey)
+}
+
+// SetHouseholdSize sets the "household_size" field.
+func (m *GroupMutation) SetHouseholdSize(i int) {
+	m.household_size = &i
+	m.addhousehold_size = nil
+}
+
+// HouseholdSize returns the value of the "household_size" field in the mutation.
+func (m *GroupMutation) HouseholdSize() (r int, exists bool) {
+	v := m.household_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHouseholdSize returns the old "household_size" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldHouseholdSize(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHouseholdSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHouseholdSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHouseholdSize: %w", err)
+	}
+	return oldValue.HouseholdSize, nil
+}
+
+// AddHouseholdSize adds i to the "household_size" field.
+func (m *GroupMutation) AddHouseholdSize(i int) {
+	if m.addhousehold_size != nil {
+		*m.addhousehold_size += i
+	} else {
+		m.addhousehold_size = &i
+	}
+}
+
+// AddedHouseholdSize returns the value that was added to the "household_size" field in this mutation.
+func (m *GroupMutation) AddedHouseholdSize() (r int, exists bool) {
+	v := m.addhousehold_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearHouseholdSize clears the value of the "household_size" field.
+func (m *GroupMutation) ClearHouseholdSize() {
+	m.household_size = nil
+	m.addhousehold_size = nil
+	m.clearedFields[group.FieldHouseholdSize] = struct{}{}
+}
+
+// HouseholdSizeCleared returns if the "household_size" field was cleared in this mutation.
+func (m *GroupMutation) HouseholdSizeCleared() bool {
+	_, ok := m.clearedFields[group.FieldHouseholdSize]
+	return ok
+}
+
+// ResetHouseholdSize resets all changes to the "household_size" field.
+func (m *GroupMutation) ResetHouseholdSize() {
+	m.household_size = nil
+	m.addhousehold_size = nil
+	delete(m.clearedFields, group.FieldHouseholdSize)
+}
+
+// SetEmergencyDays sets the "emergency_days" field.
+func (m *GroupMutation) SetEmergencyDays(i int) {
+	m.emergency_days = &i
+	m.addemergency_days = nil
+}
+
+// EmergencyDays returns the value of the "emergency_days" field in the mutation.
+func (m *GroupMutation) EmergencyDays() (r int, exists bool) {
+	v := m.emergency_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmergencyDays returns the old "emergency_days" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldEmergencyDays(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmergencyDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmergencyDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmergencyDays: %w", err)
+	}
+	return oldValue.EmergencyDays, nil
+}
+
+// AddEmergencyDays adds i to the "emergency_days" field.
+func (m *GroupMutation) AddEmergencyDays(i int) {
+	if m.addemergency_days != nil {
+		*m.addemergency_days += i
+	} else {
+		m.addemergency_days = &i
+	}
+}
+
+// AddedEmergencyDays returns the value that was added to the "emergency_days" field in this mutation.
+func (m *GroupMutation) AddedEmergencyDays() (r int, exists bool) {
+	v := m.addemergency_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearEmergencyDays clears the value of the "emergency_days" field.
+func (m *GroupMutation) ClearEmergencyDays() {
+	m.emergency_days = nil
+	m.addemergency_days = nil
+	m.clearedFields[group.FieldEmergencyDays] = struct{}{}
+}
+
+// EmergencyDaysCleared returns if the "emergency_days" field was cleared in this mutation.
+func (m *GroupMutation) EmergencyDaysCleared() bool {
+	_, ok := m.clearedFields[group.FieldEmergencyDays]
+	return ok
+}
+
+// ResetEmergencyDays resets all changes to the "emergency_days" field.
+func (m *GroupMutation) ResetEmergencyDays() {
+	m.emergency_days = nil
+	m.addemergency_days = nil
+	delete(m.clearedFields, group.FieldEmergencyDays)
+}
+
+// SetEmergencyChecklist sets the "emergency_checklist" field.
+func (m *GroupMutation) SetEmergencyChecklist(s string) {
+	m.emergency_checklist = &s
+}
+
+// EmergencyChecklist returns the value of the "emergency_checklist" field in the mutation.
+func (m *GroupMutation) EmergencyChecklist() (r string, exists bool) {
+	v := m.emergency_checklist
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmergencyChecklist returns the old "emergency_checklist" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldEmergencyChecklist(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmergencyChecklist is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmergencyChecklist requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmergencyChecklist: %w", err)
+	}
+	return oldValue.EmergencyChecklist, nil
+}
+
+// ClearEmergencyChecklist clears the value of the "emergency_checklist" field.
+func (m *GroupMutation) ClearEmergencyChecklist() {
+	m.emergency_checklist = nil
+	m.clearedFields[group.FieldEmergencyChecklist] = struct{}{}
+}
+
+// EmergencyChecklistCleared returns if the "emergency_checklist" field was cleared in this mutation.
+func (m *GroupMutation) EmergencyChecklistCleared() bool {
+	_, ok := m.clearedFields[group.FieldEmergencyChecklist]
+	return ok
+}
+
+// ResetEmergencyChecklist resets all changes to the "emergency_checklist" field.
+func (m *GroupMutation) ResetEmergencyChecklist() {
+	m.emergency_checklist = nil
+	delete(m.clearedFields, group.FieldEmergencyChecklist)
 }
 
 // AddUserIDs adds the "users" edge to the User entity by ids.
@@ -3848,7 +4042,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -3863,6 +4057,15 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.recipes_api_key != nil {
 		fields = append(fields, group.FieldRecipesAPIKey)
+	}
+	if m.household_size != nil {
+		fields = append(fields, group.FieldHouseholdSize)
+	}
+	if m.emergency_days != nil {
+		fields = append(fields, group.FieldEmergencyDays)
+	}
+	if m.emergency_checklist != nil {
+		fields = append(fields, group.FieldEmergencyChecklist)
 	}
 	return fields
 }
@@ -3882,6 +4085,12 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Currency()
 	case group.FieldRecipesAPIKey:
 		return m.RecipesAPIKey()
+	case group.FieldHouseholdSize:
+		return m.HouseholdSize()
+	case group.FieldEmergencyDays:
+		return m.EmergencyDays()
+	case group.FieldEmergencyChecklist:
+		return m.EmergencyChecklist()
 	}
 	return nil, false
 }
@@ -3901,6 +4110,12 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCurrency(ctx)
 	case group.FieldRecipesAPIKey:
 		return m.OldRecipesAPIKey(ctx)
+	case group.FieldHouseholdSize:
+		return m.OldHouseholdSize(ctx)
+	case group.FieldEmergencyDays:
+		return m.OldEmergencyDays(ctx)
+	case group.FieldEmergencyChecklist:
+		return m.OldEmergencyChecklist(ctx)
 	}
 	return nil, fmt.Errorf("unknown Group field %s", name)
 }
@@ -3945,6 +4160,27 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRecipesAPIKey(v)
 		return nil
+	case group.FieldHouseholdSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHouseholdSize(v)
+		return nil
+	case group.FieldEmergencyDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmergencyDays(v)
+		return nil
+	case group.FieldEmergencyChecklist:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmergencyChecklist(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
 }
@@ -3952,13 +4188,26 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *GroupMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addhousehold_size != nil {
+		fields = append(fields, group.FieldHouseholdSize)
+	}
+	if m.addemergency_days != nil {
+		fields = append(fields, group.FieldEmergencyDays)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case group.FieldHouseholdSize:
+		return m.AddedHouseholdSize()
+	case group.FieldEmergencyDays:
+		return m.AddedEmergencyDays()
+	}
 	return nil, false
 }
 
@@ -3967,6 +4216,20 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *GroupMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case group.FieldHouseholdSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHouseholdSize(v)
+		return nil
+	case group.FieldEmergencyDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddEmergencyDays(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Group numeric field %s", name)
 }
@@ -3977,6 +4240,15 @@ func (m *GroupMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(group.FieldRecipesAPIKey) {
 		fields = append(fields, group.FieldRecipesAPIKey)
+	}
+	if m.FieldCleared(group.FieldHouseholdSize) {
+		fields = append(fields, group.FieldHouseholdSize)
+	}
+	if m.FieldCleared(group.FieldEmergencyDays) {
+		fields = append(fields, group.FieldEmergencyDays)
+	}
+	if m.FieldCleared(group.FieldEmergencyChecklist) {
+		fields = append(fields, group.FieldEmergencyChecklist)
 	}
 	return fields
 }
@@ -3994,6 +4266,15 @@ func (m *GroupMutation) ClearField(name string) error {
 	switch name {
 	case group.FieldRecipesAPIKey:
 		m.ClearRecipesAPIKey()
+		return nil
+	case group.FieldHouseholdSize:
+		m.ClearHouseholdSize()
+		return nil
+	case group.FieldEmergencyDays:
+		m.ClearEmergencyDays()
+		return nil
+	case group.FieldEmergencyChecklist:
+		m.ClearEmergencyChecklist()
 		return nil
 	}
 	return fmt.Errorf("unknown Group nullable field %s", name)
@@ -4017,6 +4298,15 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRecipesAPIKey:
 		m.ResetRecipesAPIKey()
+		return nil
+	case group.FieldHouseholdSize:
+		m.ResetHouseholdSize()
+		return nil
+	case group.FieldEmergencyDays:
+		m.ResetEmergencyDays()
+		return nil
+	case group.FieldEmergencyChecklist:
+		m.ResetEmergencyChecklist()
 		return nil
 	}
 	return fmt.Errorf("unknown Group field %s", name)
@@ -4939,6 +5229,9 @@ type ItemMutation struct {
 	min_stock                  *int
 	addmin_stock               *int
 	barcode                    *string
+	net_weight                 *int
+	addnet_weight              *int
+	emergency_category         *item.EmergencyCategory
 	lifetime_warranty          *bool
 	warranty_expires           *time.Time
 	warranty_details           *string
@@ -5859,6 +6152,125 @@ func (m *ItemMutation) BarcodeCleared() bool {
 func (m *ItemMutation) ResetBarcode() {
 	m.barcode = nil
 	delete(m.clearedFields, item.FieldBarcode)
+}
+
+// SetNetWeight sets the "net_weight" field.
+func (m *ItemMutation) SetNetWeight(i int) {
+	m.net_weight = &i
+	m.addnet_weight = nil
+}
+
+// NetWeight returns the value of the "net_weight" field in the mutation.
+func (m *ItemMutation) NetWeight() (r int, exists bool) {
+	v := m.net_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNetWeight returns the old "net_weight" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldNetWeight(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNetWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNetWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNetWeight: %w", err)
+	}
+	return oldValue.NetWeight, nil
+}
+
+// AddNetWeight adds i to the "net_weight" field.
+func (m *ItemMutation) AddNetWeight(i int) {
+	if m.addnet_weight != nil {
+		*m.addnet_weight += i
+	} else {
+		m.addnet_weight = &i
+	}
+}
+
+// AddedNetWeight returns the value that was added to the "net_weight" field in this mutation.
+func (m *ItemMutation) AddedNetWeight() (r int, exists bool) {
+	v := m.addnet_weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearNetWeight clears the value of the "net_weight" field.
+func (m *ItemMutation) ClearNetWeight() {
+	m.net_weight = nil
+	m.addnet_weight = nil
+	m.clearedFields[item.FieldNetWeight] = struct{}{}
+}
+
+// NetWeightCleared returns if the "net_weight" field was cleared in this mutation.
+func (m *ItemMutation) NetWeightCleared() bool {
+	_, ok := m.clearedFields[item.FieldNetWeight]
+	return ok
+}
+
+// ResetNetWeight resets all changes to the "net_weight" field.
+func (m *ItemMutation) ResetNetWeight() {
+	m.net_weight = nil
+	m.addnet_weight = nil
+	delete(m.clearedFields, item.FieldNetWeight)
+}
+
+// SetEmergencyCategory sets the "emergency_category" field.
+func (m *ItemMutation) SetEmergencyCategory(ic item.EmergencyCategory) {
+	m.emergency_category = &ic
+}
+
+// EmergencyCategory returns the value of the "emergency_category" field in the mutation.
+func (m *ItemMutation) EmergencyCategory() (r item.EmergencyCategory, exists bool) {
+	v := m.emergency_category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmergencyCategory returns the old "emergency_category" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEmergencyCategory(ctx context.Context) (v item.EmergencyCategory, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmergencyCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmergencyCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmergencyCategory: %w", err)
+	}
+	return oldValue.EmergencyCategory, nil
+}
+
+// ClearEmergencyCategory clears the value of the "emergency_category" field.
+func (m *ItemMutation) ClearEmergencyCategory() {
+	m.emergency_category = nil
+	m.clearedFields[item.FieldEmergencyCategory] = struct{}{}
+}
+
+// EmergencyCategoryCleared returns if the "emergency_category" field was cleared in this mutation.
+func (m *ItemMutation) EmergencyCategoryCleared() bool {
+	_, ok := m.clearedFields[item.FieldEmergencyCategory]
+	return ok
+}
+
+// ResetEmergencyCategory resets all changes to the "emergency_category" field.
+func (m *ItemMutation) ResetEmergencyCategory() {
+	m.emergency_category = nil
+	delete(m.clearedFields, item.FieldEmergencyCategory)
 }
 
 // SetLifetimeWarranty sets the "lifetime_warranty" field.
@@ -6827,7 +7239,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -6878,6 +7290,12 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.barcode != nil {
 		fields = append(fields, item.FieldBarcode)
+	}
+	if m.net_weight != nil {
+		fields = append(fields, item.FieldNetWeight)
+	}
+	if m.emergency_category != nil {
+		fields = append(fields, item.FieldEmergencyCategory)
 	}
 	if m.lifetime_warranty != nil {
 		fields = append(fields, item.FieldLifetimeWarranty)
@@ -6951,6 +7369,10 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.MinStock()
 	case item.FieldBarcode:
 		return m.Barcode()
+	case item.FieldNetWeight:
+		return m.NetWeight()
+	case item.FieldEmergencyCategory:
+		return m.EmergencyCategory()
 	case item.FieldLifetimeWarranty:
 		return m.LifetimeWarranty()
 	case item.FieldWarrantyExpires:
@@ -7014,6 +7436,10 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldMinStock(ctx)
 	case item.FieldBarcode:
 		return m.OldBarcode(ctx)
+	case item.FieldNetWeight:
+		return m.OldNetWeight(ctx)
+	case item.FieldEmergencyCategory:
+		return m.OldEmergencyCategory(ctx)
 	case item.FieldLifetimeWarranty:
 		return m.OldLifetimeWarranty(ctx)
 	case item.FieldWarrantyExpires:
@@ -7162,6 +7588,20 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBarcode(v)
 		return nil
+	case item.FieldNetWeight:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNetWeight(v)
+		return nil
+	case item.FieldEmergencyCategory:
+		v, ok := value.(item.EmergencyCategory)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmergencyCategory(v)
+		return nil
 	case item.FieldLifetimeWarranty:
 		v, ok := value.(bool)
 		if !ok {
@@ -7249,6 +7689,9 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addmin_stock != nil {
 		fields = append(fields, item.FieldMinStock)
 	}
+	if m.addnet_weight != nil {
+		fields = append(fields, item.FieldNetWeight)
+	}
 	if m.addpurchase_price != nil {
 		fields = append(fields, item.FieldPurchasePrice)
 	}
@@ -7269,6 +7712,8 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAssetID()
 	case item.FieldMinStock:
 		return m.AddedMinStock()
+	case item.FieldNetWeight:
+		return m.AddedNetWeight()
 	case item.FieldPurchasePrice:
 		return m.AddedPurchasePrice()
 	case item.FieldSoldPrice:
@@ -7302,6 +7747,13 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddMinStock(v)
+		return nil
+	case item.FieldNetWeight:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNetWeight(v)
 		return nil
 	case item.FieldPurchasePrice:
 		v, ok := value.(float64)
@@ -7348,6 +7800,12 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldBarcode) {
 		fields = append(fields, item.FieldBarcode)
+	}
+	if m.FieldCleared(item.FieldNetWeight) {
+		fields = append(fields, item.FieldNetWeight)
+	}
+	if m.FieldCleared(item.FieldEmergencyCategory) {
+		fields = append(fields, item.FieldEmergencyCategory)
 	}
 	if m.FieldCleared(item.FieldWarrantyExpires) {
 		fields = append(fields, item.FieldWarrantyExpires)
@@ -7407,6 +7865,12 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldBarcode:
 		m.ClearBarcode()
+		return nil
+	case item.FieldNetWeight:
+		m.ClearNetWeight()
+		return nil
+	case item.FieldEmergencyCategory:
+		m.ClearEmergencyCategory()
 		return nil
 	case item.FieldWarrantyExpires:
 		m.ClearWarrantyExpires()
@@ -7487,6 +7951,12 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldBarcode:
 		m.ResetBarcode()
+		return nil
+	case item.FieldNetWeight:
+		m.ResetNetWeight()
+		return nil
+	case item.FieldEmergencyCategory:
+		m.ResetEmergencyCategory()
 		return nil
 	case item.FieldLifetimeWarranty:
 		m.ResetLifetimeWarranty()

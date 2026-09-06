@@ -38,6 +38,8 @@ describe("pantry endpoints", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(response.status).toBe(201);
     increment++;

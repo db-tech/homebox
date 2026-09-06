@@ -41,6 +41,19 @@ func (Group) Fields() []ent.Field {
 			Sensitive().
 			MaxLen(255).
 			Optional(),
+		// How many people the emergency stockpile has to feed, and for how
+		// long. Both are household facts rather than per-user preferences, so
+		// they live with the group.
+		// Optional rather than defaulted so that adding them is a plain ALTER
+		// on an existing database instead of a rebuild of the whole table.
+		// Unset reads as zero, and the defaults - one person, ten days - are
+		// applied when the figures are used.
+		field.Int("household_size").Optional(),
+		field.Int("emergency_days").Optional(),
+		// Which items on the non-food checklist have been ticked off, as a JSON
+		// array of ids. A checkbox per group is all this needs, and a table for
+		// it would be a table for one column.
+		field.Text("emergency_checklist").Optional(),
 	}
 }
 

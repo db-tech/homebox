@@ -90,6 +90,48 @@ func (gc *GroupCreate) SetNillableRecipesAPIKey(s *string) *GroupCreate {
 	return gc
 }
 
+// SetHouseholdSize sets the "household_size" field.
+func (gc *GroupCreate) SetHouseholdSize(i int) *GroupCreate {
+	gc.mutation.SetHouseholdSize(i)
+	return gc
+}
+
+// SetNillableHouseholdSize sets the "household_size" field if the given value is not nil.
+func (gc *GroupCreate) SetNillableHouseholdSize(i *int) *GroupCreate {
+	if i != nil {
+		gc.SetHouseholdSize(*i)
+	}
+	return gc
+}
+
+// SetEmergencyDays sets the "emergency_days" field.
+func (gc *GroupCreate) SetEmergencyDays(i int) *GroupCreate {
+	gc.mutation.SetEmergencyDays(i)
+	return gc
+}
+
+// SetNillableEmergencyDays sets the "emergency_days" field if the given value is not nil.
+func (gc *GroupCreate) SetNillableEmergencyDays(i *int) *GroupCreate {
+	if i != nil {
+		gc.SetEmergencyDays(*i)
+	}
+	return gc
+}
+
+// SetEmergencyChecklist sets the "emergency_checklist" field.
+func (gc *GroupCreate) SetEmergencyChecklist(s string) *GroupCreate {
+	gc.mutation.SetEmergencyChecklist(s)
+	return gc
+}
+
+// SetNillableEmergencyChecklist sets the "emergency_checklist" field if the given value is not nil.
+func (gc *GroupCreate) SetNillableEmergencyChecklist(s *string) *GroupCreate {
+	if s != nil {
+		gc.SetEmergencyChecklist(*s)
+	}
+	return gc
+}
+
 // SetID sets the "id" field.
 func (gc *GroupCreate) SetID(u uuid.UUID) *GroupCreate {
 	gc.mutation.SetID(u)
@@ -340,6 +382,18 @@ func (gc *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := gc.mutation.RecipesAPIKey(); ok {
 		_spec.SetField(group.FieldRecipesAPIKey, field.TypeString, value)
 		_node.RecipesAPIKey = value
+	}
+	if value, ok := gc.mutation.HouseholdSize(); ok {
+		_spec.SetField(group.FieldHouseholdSize, field.TypeInt, value)
+		_node.HouseholdSize = value
+	}
+	if value, ok := gc.mutation.EmergencyDays(); ok {
+		_spec.SetField(group.FieldEmergencyDays, field.TypeInt, value)
+		_node.EmergencyDays = value
+	}
+	if value, ok := gc.mutation.EmergencyChecklist(); ok {
+		_spec.SetField(group.FieldEmergencyChecklist, field.TypeString, value)
+		_node.EmergencyChecklist = value
 	}
 	if nodes := gc.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -188,6 +188,8 @@
         "details": "Details",
         "drag_and_drop": "Ziehen Sie Dateien hierher und legen Sie sie dort ab oder klicken Sie, um Dateien auszuwählen",
         "edit_details": "Details bearbeiten",
+        "emergency_category": "Notvorrat-Gruppe",
+        "emergency_category_none": "Gehört nicht zum Notvorrat",
         "expiry_date": "Ablaufdatum",
         "field_selector": "Feldauswahl",
         "field_value": "Feldwert",
@@ -204,6 +206,7 @@
         "model_number": "Modelnummer",
         "name": "Name",
         "negate_labels": "Ausgewählte Etiketten negieren",
+        "net_weight": "Packungsgröße in Gramm",
         "next_page": "Nächste Seite",
         "no_results": "Keine Elemente gefunden",
         "notes": "Anmerkungen",
@@ -356,6 +359,33 @@
             "total_consumed": "Verbraucht",
             "total_restocked": "Aufgefüllt"
         },
+        "emergency": {
+            "category": {
+                "dairy": "Milch und Milcherzeugnisse",
+                "drinks": "Getränke",
+                "fats": "Fette und Öl",
+                "fruit": "Obst",
+                "grains": "Getreideprodukte, Brot, Kartoffeln",
+                "protein": "Eier, Fleisch, Wurst, Fisch",
+                "vegetables": "Gemüse, Pilze"
+            },
+            "checklist_subtitle": "Die amtliche Checkliste für alles außer Essen",
+            "checklist_title": "Checkliste",
+            "days": "Tage",
+            "failed": "Die Vorratsbilanz konnte nicht geladen werden",
+            "food_subtitle": "Gemessen an der amtlichen Empfehlung",
+            "food_title": "Essen und Trinken",
+            "gaps_subtitle": "Das liegt im Vorrat, wird aber noch nicht mitgezählt",
+            "gaps_title": "Noch zu klären",
+            "missing": "fehlen",
+            "overall": "der Empfehlung gedeckt",
+            "people": "Personen",
+            "save_failed": "Konnte nicht gespeichert werden",
+            "source": "Quelle: Bundesamt für Bevölkerungsschutz und Katastrophenhilfe (BBK) und das Portal Ernährungsvorsorge. Der deutsche Wortlaut ist aus der amtlichen Checkliste übernommen.",
+            "title": "Notvorrat",
+            "uncategorised": "Noch ohne Gruppe - zuordnen, dann zählen sie mit",
+            "unweighed": "Ohne Packungsgröße - sie zählen erst mit, wenn eine eingetragen ist"
+        },
         "expiring": {
             "days": "{n} Tage",
             "days_left": "Noch {n} Tage",
@@ -376,6 +406,7 @@
             "privacy": "Sendet Name, Anzahl und Resttage deiner Vorratsartikel an Anthropic, sonst nichts - keine Orte, keine Preise, nichts, was zu dir gehört. Nur auf Knopfdruck.",
             "subtitle": "Gerichte rund um das, was zuerst schlecht wird",
             "title": "Was koche ich?",
+            "to_emergency": "Notvorrat",
             "to_settings": "In den Einstellungen einrichten",
             "uses": "Verbraucht"
         },

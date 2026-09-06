@@ -42,6 +42,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(response.status).toBe(201);
 
@@ -79,6 +81,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(response.status).toBe(201);
 
@@ -136,6 +140,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(response.status).toBe(201);
 
@@ -190,6 +196,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(response.status).toBe(201);
 
@@ -217,6 +225,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(parentResponse.status).toBe(201);
     expect(parent.id).toBeTruthy();
@@ -229,6 +239,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(child1Response.status).toBe(201);
     const child1ItemUpdate = {
@@ -248,6 +260,8 @@ describe("user should be able to create an item and add an attachment", () => {
       barcode: "",
       expiryDate: "",
       minStock: 0,
+      netWeight: 0,
+      emergencyCategory: "",
     });
     expect(child2Response.status).toBe(201);
     const child2ItemUpdate = {

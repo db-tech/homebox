@@ -80,6 +80,19 @@ func (Item) Fields() []ent.Field {
 		field.String("barcode").
 			MaxLen(255).
 			Optional(),
+		// Net contents of one package, in grams. Litres are counted as grams
+		// too - water is 1 g/ml, and for the stockpiling targets everything
+		// else is close enough - so one number can be added up across the lot.
+		//
+		// Zero means unknown rather than empty: an item nobody has weighed must
+		// not quietly count as nothing towards a target.
+		field.Int("net_weight").
+			Optional(),
+		// Which of the German federal stockpiling groups this counts towards.
+		// Optional because most of what Homebox holds is not food at all.
+		field.Enum("emergency_category").
+			Values("drinks", "grains", "vegetables", "fruit", "dairy", "protein", "fats").
+			Optional(),
 
 		// ------------------------------------
 		// Item Warranty
