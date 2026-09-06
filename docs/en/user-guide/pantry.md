@@ -201,6 +201,62 @@ You can also type a barcode into an item's **Pantry** card in the edit form. The
 same product in two places is fine — barcodes are not required to be unique, and
 a scan that matches several items simply lists them all.
 
+## What can I cook?
+
+**Pantry → What can I cook?** turns what is actually in the cupboard into two or
+three concrete dishes, ordered so that the one using the most soon-to-expire
+items comes first. Each says which of *your* items it uses and what you would
+have to buy.
+
+This is a recipe suggestion only in passing. The point is the other direction:
+you have cream that goes off on Thursday, and this tells you what to do about it
+tonight.
+
+It is **off by default** and has to be switched on deliberately:
+
+```
+HBOX_RECIPES_ENABLED=true
+HBOX_RECIPES_API_KEY=sk-ant-...
+HBOX_RECIPES_MODEL=claude-haiku-4-5-20251001   # optional
+```
+
+Without a key it stays off however the flag is set, and the button does not
+appear at all.
+
+### What leaves your server
+
+This is the only part of Homebox that sends anything about **what you own** to a
+third party, so it is worth being exact:
+
+- Only the **name, quantity and days left** of pantry items. No locations, no
+  prices, no descriptions, no notes, no account or group identifier, no barcodes.
+- Only **pantry items** — anything carrying a best-before date, a minimum stock
+  or a barcode. Tools, furniture and electronics are never included, and neither
+  is anything whose quantity is zero.
+- Only when you **press the button**. Never on a page load, never in the
+  background, never on a schedule.
+- With an empty pantry no request is made at all.
+
+The suggestions go to Anthropic's API with the key you configured. Each press
+costs a fraction of a cent on the default model. Pressing again asks again
+rather than replaying the last answer, because *give me a different idea* is a
+reasonable thing to want.
+
+### What the model is and is not allowed to do
+
+It does not work anything out. What is in stock and how many days each item has
+left is decided on your server before the request goes out, so a suggestion can
+never rest on the model having got the arithmetic of a date wrong.
+
+It also cannot claim you have something you do not. Every ingredient it lists
+under *Uses* is checked against the list it was given; anything else is moved to
+*You would need*. A dish that quietly assumes an ingredient you do not have is
+worse than no suggestion, because it reads as "everything is here" when it is
+not.
+
+Quantities in Homebox are counts of packages, not weights, so you get dishes and
+a sentence about why — not a recipe with grams it would have to invent.
+
 ## The pantry terminal
 
 A tablet on the wall next to the cupboard with a handheld scanner beside it,

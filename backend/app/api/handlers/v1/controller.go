@@ -96,6 +96,7 @@ type (
 		AllowRegistration bool            `json:"allowRegistration"`
 		LabelPrinting     bool            `json:"labelPrinting"`
 		ProductLookup     bool            `json:"productLookup"`
+		MealIdeas         bool            `json:"mealIdeas"`
 	}
 )
 
@@ -134,6 +135,7 @@ func (ctrl *V1Controller) HandleBase(ready ReadyFunc, build Build) errchain.Hand
 			AllowRegistration: ctrl.allowRegistration,
 			LabelPrinting:     ctrl.config.LabelMaker.PrintCommand != nil,
 			ProductLookup:     ctrl.svc.ProductLookup.Enabled(),
+			MealIdeas:         ctrl.svc.MealIdeas.Enabled(),
 		})
 	}
 }

@@ -489,6 +489,7 @@ export interface APISummary {
   latest: Latest;
   message: string;
   productLookup: boolean;
+  mealIdeas: boolean;
   title: string;
   versions: string[];
 }
@@ -545,6 +546,18 @@ export interface LoginForm {
 
 export interface ResultsRepoUserOut {
   items: UserOut[];
+}
+
+export interface MealIdeasIdea {
+  /** Only names items that are really in the pantry; anything else is in `missing`. */
+  uses: string[];
+  missing: string[];
+  title: string;
+  why: string;
+}
+
+export interface MealIdeasResult {
+  ideas: MealIdeasIdea[];
 }
 
 export interface ScanResult {

@@ -28,6 +28,19 @@ type Config struct {
 	Debug      DebugConf      `yaml:"debug"`
 	Options    Options        `yaml:"options"`
 	LabelMaker LabelMakerConf `yaml:"labelmaker"`
+	Recipes    RecipesConf    `yaml:"recipes"`
+}
+
+// RecipesConf configures meal suggestions built from what the pantry holds.
+//
+// Off by default, and it stays off without an API key. This is the only part of
+// Homebox that sends anything about what you own to a third party: the name,
+// quantity and days-left of pantry items, and nothing else. Set
+// HBOX_RECIPES_ENABLED=true and HBOX_RECIPES_API_KEY to switch it on.
+type RecipesConf struct {
+	Enabled bool   `yaml:"enabled"  conf:"default:false"`
+	APIKey  string `yaml:"api_key"  conf:"mask"`
+	Model   string `yaml:"model"    conf:"default:claude-haiku-4-5-20251001"`
 }
 
 type Options struct {

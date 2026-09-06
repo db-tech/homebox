@@ -3,11 +3,13 @@ package v1
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hay-kot/httpkit/errchain"
 	"github.com/rs/zerolog/log"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services/mealideas"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/productlookup"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
@@ -45,6 +47,74 @@ type (
 // defaultExpiryWindow is used when the caller does not ask for a specific
 // window. Two weeks is far enough ahead to act on, close enough to stay short.
 const defaultExpiryWindow = 14
+
+// MealIdeasResult is a handful of things to cook from what is in the cupboard.
+// Empty rather than an error when the pantry is empty: nothing to suggest is a
+// normal answer, not a failure.
+type MealIdeasResult struct {
+	Ideas []mealideas.Idea `json:"ideas"`
+}
+
+// HandleMealIdeas godoc
+//
+//	@Summary	Suggest meals from what the pantry holds
+//	@Tags		Pantry
+//	@Produce	json
+//	@Success	200	{object}	MealIdeasResult
+//	@Router		/v1/pantry/meal-ideas [GET]
+//	@Security	Bearer
+//
+// The days left on each item are worked out here rather than by the model, so a
+// suggestion can never rest on it having got the arithmetic of a date wrong.
+func (ctrl *V1Controller) HandleMealIdeas() errchain.HandlerFunc {
+	fn := func(r *http.Request) (MealIdeasResult, error) {
+		auth := services.NewContext(r.Context())
+
+		items, err := ctrl.repo.Items.QueryPantry(auth, auth.GID)
+		if err != nil {
+			return MealIdeasResult{}, err
+		}
+
+		stock := make([]mealideas.Stock, 0, len(items))
+		for _, itm := range items {
+			line := mealideas.Stock{Name: itm.Name, Quantity: itm.Quantity}
+
+			if expiry := itm.ExpiryDate.Time(); !expiry.IsZero() {
+				left := daysUntil(expiry)
+				line.DaysLeft = &left
+			}
+
+			stock = append(stock, line)
+		}
+
+		ideas, err := ctrl.svc.MealIdeas.Suggest(auth, stock)
+		switch {
+		case errors.Is(err, mealideas.ErrEmptyPantry):
+			return MealIdeasResult{Ideas: []mealideas.Idea{}}, nil
+		case errors.Is(err, mealideas.ErrDisabled), errors.Is(err, mealideas.ErrNoKey):
+			// The UI hides the button when the status endpoint says the feature
+			// is off; this is the guard for anything calling the route anyway.
+			return MealIdeasResult{}, validate.NewRequestError(err, http.StatusNotFound)
+		case err != nil:
+			log.Warn().Err(err).Msg("meal ideas failed")
+			return MealIdeasResult{}, validate.NewRequestError(err, http.StatusBadGateway)
+		}
+
+		return MealIdeasResult{Ideas: ideas}, nil
+	}
+
+	return adapters.Command(fn, http.StatusOK)
+}
+
+// daysUntil counts whole days from today to a date, so that "today" is 0 and
+// anything already past is negative.
+func daysUntil(at time.Time) int {
+	startOfDay := func(t time.Time) time.Time {
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	}
+
+	return int(startOfDay(at).Sub(startOfDay(time.Now())).Hours() / 24)
+}
 
 // HandleItemsExpiring godoc
 //

@@ -212,6 +212,33 @@ func TestItemsRepository_QueryLowStockKeepsBarcodelessItemsSeparate(t *testing.T
 	assert.Equal(t, 1, findItem(t, got, one.ID).Quantity, "an item without a barcode keeps its own quantity")
 }
 
+func TestItemsRepository_QueryPantryPicksProvisionsOnly(t *testing.T) {
+	items := useItems(t, 5)
+
+	dated := items[0]
+	tracked := items[1]
+	scanned := items[2]
+	// A hammer: no expiry, no minimum, no barcode. Nothing about it says food,
+	// and it must not turn up in a list of things to cook with.
+	tool := items[3]
+	empty := items[4]
+
+	updatePantry(t, dated, 2, 0, "", time.Now().AddDate(0, 0, 20))
+	updatePantry(t, tracked, 2, 4, "", time.Time{})
+	updatePantry(t, scanned, 2, 0, "4044444444444", time.Time{})
+	updatePantry(t, tool, 1, 0, "", time.Time{})
+	updatePantry(t, empty, 0, 0, "4055555555555", time.Now().AddDate(0, 0, 20))
+
+	got, err := tRepos.Items.QueryPantry(context.Background(), tGroup.ID)
+	require.NoError(t, err)
+
+	assert.True(t, containsItem(got, dated.ID), "an expiry date makes it provisions")
+	assert.True(t, containsItem(got, tracked.ID), "a minimum stock makes it provisions")
+	assert.True(t, containsItem(got, scanned.ID), "a barcode makes it provisions")
+	assert.False(t, containsItem(got, tool.ID), "an item with no pantry field at all is not food")
+	assert.False(t, containsItem(got, empty.ID), "there is nothing to cook with an empty shelf")
+}
+
 func TestItemsRepository_QueryByBarcode(t *testing.T) {
 	items := useItems(t, 2)
 	updatePantry(t, items[0], 1, 0, "4001234567890", time.Time{})

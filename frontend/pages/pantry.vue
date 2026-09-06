@@ -1,12 +1,13 @@
 <script setup lang="ts">
   import { useI18n } from "vue-i18n";
   import { ServerEvent, onServerEvent } from "~~/composables/use-server-events";
-  import type { ConsumptionSummary, ItemSummary } from "~~/lib/api/types/data-contracts";
+  import type { ConsumptionSummary, ItemSummary, MealIdeasIdea } from "~~/lib/api/types/data-contracts";
   import MdiAlertOutline from "~icons/mdi/alert-outline";
   import MdiTabletDashboard from "~icons/mdi/tablet-dashboard";
   import MdiCartOutline from "~icons/mdi/cart-outline";
   import MdiChartLine from "~icons/mdi/chart-line";
   import MdiContentCopy from "~icons/mdi/content-copy";
+  import MdiChefHat from "~icons/mdi/chef-hat";
 
   definePageMeta({
     middleware: ["auth"],
@@ -16,8 +17,42 @@
   });
 
   const api = useUserApi();
+  const pubApi = usePublicApi();
   const toast = useNotifier();
   const { t } = useI18n();
+
+  // The suggestions are the one place Homebox sends anything about what you own
+  // to a third party, so the card is not even offered unless the server says it
+  // is switched on.
+  const { data: serverStatus } = useAsyncData(async () => {
+    const { data } = await pubApi.status();
+    return data ?? null;
+  });
+
+  const ideas = ref<MealIdeasIdea[]>([]);
+  const thinking = ref(false);
+  const ideasAsked = ref(false);
+
+  /**
+   * Deliberately only ever on a tap. Every call costs a fraction of a cent and,
+   * more to the point, sends the pantry out - neither belongs on a page load.
+   * A second tap asks again rather than replaying the answer, because "give me
+   * a different idea" is a reasonable thing to want.
+   */
+  async function askForIdeas() {
+    thinking.value = true;
+    ideasAsked.value = true;
+
+    const { data, error } = await api.pantry.mealIdeas();
+    thinking.value = false;
+
+    if (error || !data) {
+      toast.error(t("pantry.ideas.failed"));
+      return;
+    }
+
+    ideas.value = data.ideas ?? [];
+  }
 
   const windowOptions = [7, 14, 30, 90];
   const expiryWindow = ref(14);
@@ -218,6 +253,46 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </BaseCard>
+
+    <!-- Meal ideas -->
+    <BaseCard v-if="serverStatus?.mealIdeas">
+      <template #title>
+        <MdiChefHat class="mr-2 size-6" />
+        {{ $t("pantry.ideas.title") }}
+      </template>
+      <template #subtitle>{{ $t("pantry.ideas.subtitle") }}</template>
+
+      <div class="border-t border-gray-300 p-6">
+        <BaseButton :loading="thinking" @click="askForIdeas">
+          <template #icon><MdiChefHat /></template>
+          {{ ideasAsked ? $t("pantry.ideas.again") : $t("pantry.ideas.ask") }}
+        </BaseButton>
+
+        <p v-if="!ideasAsked" class="mt-3 text-sm text-base-content/60">
+          {{ $t("pantry.ideas.privacy") }}
+        </p>
+
+        <p v-else-if="!thinking && ideas.length === 0" class="mt-4 text-sm">
+          {{ $t("pantry.ideas.empty") }}
+        </p>
+
+        <ul v-else class="mt-4 flex flex-col gap-4">
+          <li v-for="idea in ideas" :key="idea.title" class="rounded-lg border border-gray-300 p-4">
+            <p class="text-lg font-bold">{{ idea.title }}</p>
+            <p class="mt-1 text-sm">{{ idea.why }}</p>
+
+            <p v-if="idea.uses.length" class="mt-2 text-sm">
+              <span class="font-semibold">{{ $t("pantry.ideas.uses") }}:</span>
+              {{ idea.uses.join(", ") }}
+            </p>
+            <p v-if="idea.missing.length" class="text-sm text-base-content/60">
+              <span class="font-semibold">{{ $t("pantry.ideas.missing") }}:</span>
+              {{ idea.missing.join(", ") }}
+            </p>
+          </li>
+        </ul>
       </div>
     </BaseCard>
 

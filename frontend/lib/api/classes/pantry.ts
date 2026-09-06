@@ -4,6 +4,7 @@ import type {
   ConsumptionEntry,
   ConsumptionSummary,
   ItemSummary,
+  MealIdeasResult,
   ScanResult,
 } from "../types/data-contracts";
 
@@ -56,6 +57,17 @@ export class PantryAPI extends BaseAPI {
       url: route(`/items/${itemId}/consumption`),
       body: data,
     });
+  }
+
+  /**
+   * A few things to cook from what is in the cupboard, chosen so that whatever
+   * goes off first gets used up.
+   *
+   * Only reaches a third party, and only when called - so call it on a tap and
+   * never on a page load. 404 means the feature is switched off on the server.
+   */
+  mealIdeas() {
+    return this.http.get<MealIdeasResult>({ url: route("/pantry/meal-ideas") });
   }
 
   deleteEntry(entryId: string) {

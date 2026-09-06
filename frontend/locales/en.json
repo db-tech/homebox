@@ -366,6 +366,17 @@
             "title": "Expiring Soon",
             "window": "Period"
         },
+        "ideas": {
+            "again": "Suggest something else",
+            "ask": "What can I cook?",
+            "empty": "Nothing in the pantry to work from yet. Scan a few things in first.",
+            "failed": "Could not get any suggestions",
+            "missing": "You would need",
+            "privacy": "Sends the name, quantity and days left of your pantry items to Anthropic, and nothing else - no locations, no prices, nothing tied to you. Only when you press the button.",
+            "subtitle": "Dishes built around whatever goes off first",
+            "title": "What can I cook?",
+            "uses": "Uses"
+        },
         "kiosk": {
             "already_empty": "{name} was already at zero",
             "back": "Back",

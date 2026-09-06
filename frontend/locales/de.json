@@ -366,6 +366,17 @@
             "title": "Läuft bald ab",
             "window": "Zeitraum"
         },
+        "ideas": {
+            "again": "Andere Vorschläge",
+            "ask": "Was koche ich?",
+            "empty": "Noch nichts im Vorrat, woraus sich etwas machen ließe. Scanne erst ein paar Sachen ein.",
+            "failed": "Es kamen keine Vorschläge zurück",
+            "missing": "Du bräuchtest noch",
+            "privacy": "Sendet Name, Anzahl und Resttage deiner Vorratsartikel an Anthropic, sonst nichts - keine Orte, keine Preise, nichts, was zu dir gehört. Nur auf Knopfdruck.",
+            "subtitle": "Gerichte rund um das, was zuerst schlecht wird",
+            "title": "Was koche ich?",
+            "uses": "Verbraucht"
+        },
         "kiosk": {
             "already_empty": "{name} stand schon auf 0",
             "back": "Zurück",

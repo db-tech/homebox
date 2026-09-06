@@ -3,6 +3,7 @@ package services
 
 import (
 	"github.com/sysadminsmedia/homebox/backend/internal/core/currencies"
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services/mealideas"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/productlookup"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
 )
@@ -14,6 +15,7 @@ type AllServices struct {
 	BackgroundService *BackgroundService
 	Currencies        *currencies.CurrencyRegistry
 	ProductLookup     *productlookup.Service
+	MealIdeas         *mealideas.Service
 }
 
 type OptionsFunc func(*options)
@@ -22,6 +24,13 @@ type options struct {
 	autoIncrementAssetID bool
 	currencies           []currencies.Currency
 	productLookup        bool
+	mealIdeas            mealIdeasOptions
+}
+
+type mealIdeasOptions struct {
+	enabled bool
+	apiKey  string
+	model   string
 }
 
 func WithAutoIncrementAssetID(v bool) func(*options) {
@@ -77,5 +86,16 @@ func New(repos *repo.AllRepos, opts ...OptionsFunc) *AllServices {
 		BackgroundService: &BackgroundService{repos, Latest{}},
 		Currencies:        currencies.NewCurrencyService(options.currencies),
 		ProductLookup:     productlookup.New(options.productLookup),
+		MealIdeas:         mealideas.New(options.mealIdeas.enabled, options.mealIdeas.apiKey, options.mealIdeas.model),
+	}
+}
+
+// WithMealIdeas enables meal suggestions built from the pantry. Off by default
+// here for the same reason as the barcode lookup: anything constructing the
+// services without saying so must never reach out to a third party, and this
+// one would send item names rather than a barcode.
+func WithMealIdeas(enabled bool, apiKey, model string) func(*options) {
+	return func(o *options) {
+		o.mealIdeas = mealIdeasOptions{enabled: enabled, apiKey: apiKey, model: model}
 	}
 }

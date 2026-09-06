@@ -173,6 +173,33 @@ func (e *ItemsRepository) stockByBarcode(ctx context.Context, gid uuid.UUID, of 
 	return totals, nil
 }
 
+// QueryPantry returns the non-archived items of a group that are being treated
+// as provisions and still have something in them.
+//
+// "Provisions" means an item carrying at least one of the pantry fields: a
+// best-before date, a minimum stock, or a barcode. That is exactly what the
+// scanner puts on the things it books, so it picks up the food and leaves
+// tools, furniture and electronics alone without anybody having to maintain a
+// separate list.
+//
+// Items at zero are left out: there is nothing to cook with an empty shelf.
+func (e *ItemsRepository) QueryPantry(ctx context.Context, gid uuid.UUID) ([]ItemSummary, error) {
+	q := e.db.Item.Query().Where(
+		item.HasGroupWith(group.ID(gid)),
+		item.Archived(false),
+		item.QuantityGTE(1),
+		item.Or(
+			item.And(item.ExpiryDateNotNil(), item.ExpiryDateNEQ(time.Time{})),
+			item.MinStockGT(0),
+			item.BarcodeNEQ(""),
+		),
+	).Order(
+		ent.Asc(item.FieldName),
+	).WithLabel().WithLocation()
+
+	return mapItemsSummaryErr(q.All(ctx))
+}
+
 // QueryByBarcode returns the non-archived items of a group carrying the given
 // barcode. A barcode is not enforced to be unique - the same product may sit in
 // two locations - so this returns every match and lets the caller decide.

@@ -256,6 +256,7 @@ func run(cfg *config.Config) error {
 		services.WithAutoIncrementAssetID(cfg.Options.AutoIncrementAssetID),
 		services.WithCurrencies(currencies),
 		services.WithProductLookup(cfg.Options.ProductLookup),
+		services.WithMealIdeas(cfg.Recipes.Enabled, cfg.Recipes.APIKey, cfg.Recipes.Model),
 	)
 
 	// =========================================================================
