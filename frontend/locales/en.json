@@ -372,9 +372,11 @@
             "empty": "Nothing in the pantry to work from yet. Scan a few things in first.",
             "failed": "Could not get any suggestions",
             "missing": "You would need",
+            "needs_key": "This needs an Anthropic API key. You store it once in your settings; nothing is sent anywhere until you do.",
             "privacy": "Sends the name, quantity and days left of your pantry items to Anthropic, and nothing else - no locations, no prices, nothing tied to you. Only when you press the button.",
             "subtitle": "Dishes built around whatever goes off first",
             "title": "What can I cook?",
+            "to_settings": "Set up in settings",
             "uses": "Uses"
         },
         "kiosk": {
@@ -502,6 +504,20 @@
         "notifier_modal": "{ type, select, true {Edit} false {Create} other {Other}} Notifier",
         "notifiers": "Notifiers",
         "notifiers_sub": "Get notifications for upcoming maintenance reminders",
+        "recipes": {
+            "active": "Active. The button on the pantry page will work.",
+            "explainer": "Sends the name, quantity and days left of your pantry items to Anthropic when you press the button on the pantry page - nothing else, and never in the background. Get a key at console.anthropic.com. Each press costs a fraction of a cent.",
+            "failed": "Could not save the key",
+            "inactive": "No key stored, so nothing is ever sent.",
+            "label": "Anthropic API key",
+            "remove": "Remove",
+            "removed": "Key removed",
+            "save": "Save key",
+            "saved": "Key saved",
+            "stored": "A key is stored - type a new one to replace it",
+            "subtitle": "Needed for the meal suggestions on the pantry page",
+            "title": "Meal suggestions"
+        },
         "test": "Test",
         "theme_settings": "Theme Settings",
         "theme_settings_sub": "Theme settings are stored in your browser's local storage. You can change the theme at any time. If you're\n having trouble setting your theme try refreshing your browser.",

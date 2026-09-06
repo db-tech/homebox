@@ -76,6 +76,20 @@ func (gc *GroupCreate) SetNillableCurrency(s *string) *GroupCreate {
 	return gc
 }
 
+// SetRecipesAPIKey sets the "recipes_api_key" field.
+func (gc *GroupCreate) SetRecipesAPIKey(s string) *GroupCreate {
+	gc.mutation.SetRecipesAPIKey(s)
+	return gc
+}
+
+// SetNillableRecipesAPIKey sets the "recipes_api_key" field if the given value is not nil.
+func (gc *GroupCreate) SetNillableRecipesAPIKey(s *string) *GroupCreate {
+	if s != nil {
+		gc.SetRecipesAPIKey(*s)
+	}
+	return gc
+}
+
 // SetID sets the "id" field.
 func (gc *GroupCreate) SetID(u uuid.UUID) *GroupCreate {
 	gc.mutation.SetID(u)
@@ -267,6 +281,11 @@ func (gc *GroupCreate) check() error {
 	if _, ok := gc.mutation.Currency(); !ok {
 		return &ValidationError{Name: "currency", err: errors.New(`ent: missing required field "Group.currency"`)}
 	}
+	if v, ok := gc.mutation.RecipesAPIKey(); ok {
+		if err := group.RecipesAPIKeyValidator(v); err != nil {
+			return &ValidationError{Name: "recipes_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.recipes_api_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -317,6 +336,10 @@ func (gc *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := gc.mutation.Currency(); ok {
 		_spec.SetField(group.FieldCurrency, field.TypeString, value)
 		_node.Currency = value
+	}
+	if value, ok := gc.mutation.RecipesAPIKey(); ok {
+		_spec.SetField(group.FieldRecipesAPIKey, field.TypeString, value)
+		_node.RecipesAPIKey = value
 	}
 	if nodes := gc.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

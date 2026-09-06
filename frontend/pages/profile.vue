@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { useI18n } from "vue-i18n";
   import type { Detail } from "~~/components/global/DetailsSection/types";
   import { themes } from "~~/lib/data/themes";
   import type { CurrenciesCurrency, NotifierCreate, NotifierOut } from "~~/lib/api/types/data-contracts";
@@ -9,6 +10,7 @@
   import MdiFill from "~icons/mdi/fill";
   import MdiPencil from "~icons/mdi/pencil";
   import MdiAccountMultiple from "~icons/mdi/account-multiple";
+  import MdiChefHat from "~icons/mdi/chef-hat";
   import { getLocaleCode } from "~/composables/use-formatters";
 
   definePageMeta({
@@ -19,8 +21,10 @@
   });
 
   const api = useUserApi();
+  const pubApi = usePublicApi();
   const confirm = useConfirm();
   const notify = useNotifier();
+  const { t } = useI18n();
 
   const currencies = computedAsync(async () => {
     const resp = await api.group.currencies();
@@ -96,6 +100,40 @@
 
     group.value = data;
     notify.success("Group updated");
+  }
+
+  // Meal suggestions are the one feature that sends anything about what you own
+  // to a third party, so the key lives here rather than in the deployment - and
+  // the card is not shown at all unless the server permits the feature.
+  const { data: serverStatus } = useAsyncData(async () => {
+    const { data } = await pubApi.status();
+    return data ?? null;
+  });
+
+  const recipesKey = ref("");
+  const savingKey = ref(false);
+
+  async function saveRecipesKey(value: string) {
+    if (!group.value) return;
+
+    savingKey.value = true;
+    const { data, error } = await api.group.update({
+      name: group.value.name,
+      currency: group.value.currency,
+      recipesApiKey: value,
+    });
+    savingKey.value = false;
+
+    if (error || !data) {
+      notify.error(t("profile.recipes.failed"));
+      return;
+    }
+
+    // Never held on to and never read back: the server only ever says whether
+    // there is one.
+    recipesKey.value = "";
+    group.value = data;
+    notify.success(value ? t("profile.recipes.saved") : t("profile.recipes.removed"));
   }
 
   const { setTheme } = useTheme();
@@ -459,6 +497,60 @@
           <div class="mt-4">
             <BaseButton size="sm" @click="updateGroup"> {{ $t("profile.update_group") }} </BaseButton>
           </div>
+        </div>
+      </BaseCard>
+
+      <BaseCard v-if="serverStatus?.mealIdeas">
+        <template #title>
+          <BaseSectionHeader class="pb-0">
+            <MdiChefHat class="-mt-1 mr-2" />
+            <span> {{ $t("profile.recipes.title") }} </span>
+            <template #description>
+              {{ $t("profile.recipes.subtitle") }}
+            </template>
+          </BaseSectionHeader>
+        </template>
+
+        <div v-if="group" class="p-5 pt-0">
+          <p class="mb-3 text-sm">{{ $t("profile.recipes.explainer") }}</p>
+
+          <div class="flex flex-wrap items-end gap-2">
+            <div class="form-control min-w-64 flex-1">
+              <label class="label" for="recipes-key">
+                <span class="label-text">{{ $t("profile.recipes.label") }}</span>
+              </label>
+              <input
+                id="recipes-key"
+                v-model="recipesKey"
+                type="password"
+                autocomplete="off"
+                class="input input-bordered"
+                :placeholder="group.hasRecipesApiKey ? $t('profile.recipes.stored') : 'sk-ant-...'"
+              />
+            </div>
+
+            <BaseButton
+              size="sm"
+              :disabled="!recipesKey.trim() || savingKey"
+              @click="saveRecipesKey(recipesKey.trim())"
+            >
+              {{ $t("profile.recipes.save") }}
+            </BaseButton>
+
+            <BaseButton
+              v-if="group.hasRecipesApiKey"
+              size="sm"
+              class="btn-ghost"
+              :disabled="savingKey"
+              @click="saveRecipesKey('')"
+            >
+              {{ $t("profile.recipes.remove") }}
+            </BaseButton>
+          </div>
+
+          <p class="mt-3 text-sm text-base-content/60">
+            {{ group.hasRecipesApiKey ? $t("profile.recipes.active") : $t("profile.recipes.inactive") }}
+          </p>
         </div>
       </BaseCard>
 

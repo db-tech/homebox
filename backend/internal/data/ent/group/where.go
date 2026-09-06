@@ -76,6 +76,11 @@ func Currency(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCurrency, v))
 }
 
+// RecipesAPIKey applies equality check predicate on the "recipes_api_key" field. It's identical to RecipesAPIKeyEQ.
+func RecipesAPIKey(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldRecipesAPIKey, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -284,6 +289,81 @@ func CurrencyEqualFold(v string) predicate.Group {
 // CurrencyContainsFold applies the ContainsFold predicate on the "currency" field.
 func CurrencyContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldCurrency, v))
+}
+
+// RecipesAPIKeyEQ applies the EQ predicate on the "recipes_api_key" field.
+func RecipesAPIKeyEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyNEQ applies the NEQ predicate on the "recipes_api_key" field.
+func RecipesAPIKeyNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyIn applies the In predicate on the "recipes_api_key" field.
+func RecipesAPIKeyIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldRecipesAPIKey, vs...))
+}
+
+// RecipesAPIKeyNotIn applies the NotIn predicate on the "recipes_api_key" field.
+func RecipesAPIKeyNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldRecipesAPIKey, vs...))
+}
+
+// RecipesAPIKeyGT applies the GT predicate on the "recipes_api_key" field.
+func RecipesAPIKeyGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyGTE applies the GTE predicate on the "recipes_api_key" field.
+func RecipesAPIKeyGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyLT applies the LT predicate on the "recipes_api_key" field.
+func RecipesAPIKeyLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyLTE applies the LTE predicate on the "recipes_api_key" field.
+func RecipesAPIKeyLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyContains applies the Contains predicate on the "recipes_api_key" field.
+func RecipesAPIKeyContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyHasPrefix applies the HasPrefix predicate on the "recipes_api_key" field.
+func RecipesAPIKeyHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyHasSuffix applies the HasSuffix predicate on the "recipes_api_key" field.
+func RecipesAPIKeyHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyIsNil applies the IsNil predicate on the "recipes_api_key" field.
+func RecipesAPIKeyIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldRecipesAPIKey))
+}
+
+// RecipesAPIKeyNotNil applies the NotNil predicate on the "recipes_api_key" field.
+func RecipesAPIKeyNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldRecipesAPIKey))
+}
+
+// RecipesAPIKeyEqualFold applies the EqualFold predicate on the "recipes_api_key" field.
+func RecipesAPIKeyEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldRecipesAPIKey, v))
+}
+
+// RecipesAPIKeyContainsFold applies the ContainsFold predicate on the "recipes_api_key" field.
+func RecipesAPIKeyContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldRecipesAPIKey, v))
 }
 
 // HasUsers applies the HasEdge predicate on the "users" edge.

@@ -68,6 +68,8 @@ export interface DocumentOut {
 }
 
 export interface Group {
+  /** Whether a meal-ideas API key is stored. The key itself is never returned. */
+  hasRecipesApiKey: boolean;
   createdAt: Date | string;
   currency: string;
   id: string;
@@ -85,6 +87,11 @@ export interface GroupStatistics {
 }
 
 export interface GroupUpdate {
+  /**
+   * Three-valued. Leave it out to keep the stored key, pass "" to remove it,
+   * pass a value to replace it. An update that omits it must never clear it.
+   */
+  recipesApiKey?: string;
   currency: string;
   name: string;
 }

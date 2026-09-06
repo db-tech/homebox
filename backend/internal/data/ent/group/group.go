@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldCurrency holds the string denoting the currency field in the database.
 	FieldCurrency = "currency"
+	// FieldRecipesAPIKey holds the string denoting the recipes_api_key field in the database.
+	FieldRecipesAPIKey = "recipes_api_key"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
 	// EdgeLocations holds the string denoting the locations edge name in mutations.
@@ -97,6 +99,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldCurrency,
+	FieldRecipesAPIKey,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -120,6 +123,8 @@ var (
 	NameValidator func(string) error
 	// DefaultCurrency holds the default value on creation for the "currency" field.
 	DefaultCurrency string
+	// RecipesAPIKeyValidator is a validator for the "recipes_api_key" field. It is called by the builders before save.
+	RecipesAPIKeyValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -150,6 +155,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByCurrency orders the results by the currency field.
 func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCurrency, opts...).ToFunc()
+}
+
+// ByRecipesAPIKey orders the results by the recipes_api_key field.
+func ByRecipesAPIKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecipesAPIKey, opts...).ToFunc()
 }
 
 // ByUsersCount orders the results by users count.

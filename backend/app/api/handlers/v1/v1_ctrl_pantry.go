@@ -75,6 +75,10 @@ func (ctrl *V1Controller) HandleMealIdeas() errchain.HandlerFunc {
 			return MealIdeasResult{}, err
 		}
 
+		if len(items) == 0 {
+			return MealIdeasResult{Ideas: []mealideas.Idea{}}, nil
+		}
+
 		stock := make([]mealideas.Stock, 0, len(items))
 		for _, itm := range items {
 			line := mealideas.Stock{Name: itm.Name, Quantity: itm.Quantity}
@@ -87,7 +91,14 @@ func (ctrl *V1Controller) HandleMealIdeas() errchain.HandlerFunc {
 			stock = append(stock, line)
 		}
 
-		ideas, err := ctrl.svc.MealIdeas.Suggest(auth, stock)
+		// Read the key only once there is actually something to ask about, so a
+		// pantry with nothing in it never even touches the stored secret.
+		key, err := ctrl.repo.Groups.RecipesAPIKey(auth, auth.GID)
+		if err != nil {
+			return MealIdeasResult{}, err
+		}
+
+		ideas, err := ctrl.svc.MealIdeas.Suggest(auth, key, stock)
 		switch {
 		case errors.Is(err, mealideas.ErrEmptyPantry):
 			return MealIdeasResult{Ideas: []mealideas.Idea{}}, nil

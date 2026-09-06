@@ -29,6 +29,13 @@
     return data ?? null;
   });
 
+  // Whether a key has been stored is per group, so it comes from the group and
+  // not from the public status - that only says the server permits the feature.
+  const { data: group } = useAsyncData(async () => {
+    const { data } = await api.group.get();
+    return data ?? null;
+  });
+
   const ideas = ref<MealIdeasIdea[]>([]);
   const thinking = ref(false);
   const ideasAsked = ref(false);
@@ -265,34 +272,43 @@
       <template #subtitle>{{ $t("pantry.ideas.subtitle") }}</template>
 
       <div class="border-t border-gray-300 p-6">
-        <BaseButton :loading="thinking" @click="askForIdeas">
-          <template #icon><MdiChefHat /></template>
-          {{ ideasAsked ? $t("pantry.ideas.again") : $t("pantry.ideas.ask") }}
-        </BaseButton>
+        <template v-if="group && !group.hasRecipesApiKey">
+          <p class="text-sm">{{ $t("pantry.ideas.needs_key") }}</p>
+          <NuxtLink to="/profile" class="btn btn-primary btn-sm mt-3">
+            {{ $t("pantry.ideas.to_settings") }}
+          </NuxtLink>
+        </template>
 
-        <p v-if="!ideasAsked" class="mt-3 text-sm text-base-content/60">
-          {{ $t("pantry.ideas.privacy") }}
-        </p>
+        <template v-else>
+          <BaseButton :loading="thinking" @click="askForIdeas">
+            <template #icon><MdiChefHat /></template>
+            {{ ideasAsked ? $t("pantry.ideas.again") : $t("pantry.ideas.ask") }}
+          </BaseButton>
 
-        <p v-else-if="!thinking && ideas.length === 0" class="mt-4 text-sm">
-          {{ $t("pantry.ideas.empty") }}
-        </p>
+          <p v-if="!ideasAsked" class="mt-3 text-sm text-base-content/60">
+            {{ $t("pantry.ideas.privacy") }}
+          </p>
 
-        <ul v-else class="mt-4 flex flex-col gap-4">
-          <li v-for="idea in ideas" :key="idea.title" class="rounded-lg border border-gray-300 p-4">
-            <p class="text-lg font-bold">{{ idea.title }}</p>
-            <p class="mt-1 text-sm">{{ idea.why }}</p>
+          <p v-else-if="!thinking && ideas.length === 0" class="mt-4 text-sm">
+            {{ $t("pantry.ideas.empty") }}
+          </p>
 
-            <p v-if="idea.uses.length" class="mt-2 text-sm">
-              <span class="font-semibold">{{ $t("pantry.ideas.uses") }}:</span>
-              {{ idea.uses.join(", ") }}
-            </p>
-            <p v-if="idea.missing.length" class="text-sm text-base-content/60">
-              <span class="font-semibold">{{ $t("pantry.ideas.missing") }}:</span>
-              {{ idea.missing.join(", ") }}
-            </p>
-          </li>
-        </ul>
+          <ul v-else class="mt-4 flex flex-col gap-4">
+            <li v-for="idea in ideas" :key="idea.title" class="rounded-lg border border-gray-300 p-4">
+              <p class="text-lg font-bold">{{ idea.title }}</p>
+              <p class="mt-1 text-sm">{{ idea.why }}</p>
+
+              <p v-if="idea.uses.length" class="mt-2 text-sm">
+                <span class="font-semibold">{{ $t("pantry.ideas.uses") }}:</span>
+                {{ idea.uses.join(", ") }}
+              </p>
+              <p v-if="idea.missing.length" class="text-sm text-base-content/60">
+                <span class="font-semibold">{{ $t("pantry.ideas.missing") }}:</span>
+                {{ idea.missing.join(", ") }}
+              </p>
+            </li>
+          </ul>
+        </template>
       </div>
     </BaseCard>
 

@@ -29,6 +29,8 @@ func NewGroupRepository(db *ent.Client) *GroupRepository {
 			CreatedAt: g.CreatedAt,
 			UpdatedAt: g.UpdatedAt,
 			Currency:  strings.ToUpper(g.Currency),
+			// Whether, never what.
+			HasRecipesAPIKey: g.RecipesAPIKey != "",
 		}
 	}
 
@@ -55,11 +57,20 @@ type (
 		CreatedAt time.Time `json:"createdAt,omitempty"`
 		UpdatedAt time.Time `json:"updatedAt,omitempty"`
 		Currency  string    `json:"currency,omitempty"`
+		// HasRecipesAPIKey says whether a key is stored, never what it is. The
+		// key itself must not travel back to a browser, so there is no field
+		// here that could accidentally carry it.
+		HasRecipesAPIKey bool `json:"hasRecipesApiKey"`
 	}
 
 	GroupUpdate struct {
 		Name     string `json:"name"`
 		Currency string `json:"currency"`
+		// RecipesAPIKey is three-valued on purpose. Nil leaves the stored key
+		// alone, which is what every update that is not about the key must do -
+		// renaming the group would otherwise wipe it. An empty string clears
+		// it, and anything else replaces it.
+		RecipesAPIKey *string `json:"recipesApiKey,omitempty"`
 	}
 
 	GroupInvitationCreate struct {
@@ -259,12 +270,34 @@ func (r *GroupRepository) GroupCreate(ctx context.Context, name string) (Group, 
 }
 
 func (r *GroupRepository) GroupUpdate(ctx context.Context, id uuid.UUID, data GroupUpdate) (Group, error) {
-	entity, err := r.db.Group.UpdateOneID(id).
+	q := r.db.Group.UpdateOneID(id).
 		SetName(data.Name).
-		SetCurrency(strings.ToLower(data.Currency)).
-		Save(ctx)
+		SetCurrency(strings.ToLower(data.Currency))
 
-	return r.groupMapper.MapErr(entity, err)
+	if data.RecipesAPIKey != nil {
+		if key := strings.TrimSpace(*data.RecipesAPIKey); key == "" {
+			q.ClearRecipesAPIKey()
+		} else {
+			q.SetRecipesAPIKey(key)
+		}
+	}
+
+	return r.groupMapper.MapErr(q.Save(ctx))
+}
+
+// RecipesAPIKey reads the stored key for making a request with. It is
+// deliberately its own call rather than a field on Group: everything that
+// returns a Group returns it to a browser, and this must not.
+func (r *GroupRepository) RecipesAPIKey(ctx context.Context, id uuid.UUID) (string, error) {
+	// Read through the entity rather than selecting the column: an unset key is
+	// NULL, and scanning that straight into a string fails - which would be the
+	// normal case, not the exception.
+	entity, err := r.db.Group.Get(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	return entity.RecipesAPIKey, nil
 }
 
 func (r *GroupRepository) GroupByID(ctx context.Context, id uuid.UUID) (Group, error) {

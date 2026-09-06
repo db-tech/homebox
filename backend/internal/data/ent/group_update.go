@@ -70,6 +70,26 @@ func (gu *GroupUpdate) SetNillableCurrency(s *string) *GroupUpdate {
 	return gu
 }
 
+// SetRecipesAPIKey sets the "recipes_api_key" field.
+func (gu *GroupUpdate) SetRecipesAPIKey(s string) *GroupUpdate {
+	gu.mutation.SetRecipesAPIKey(s)
+	return gu
+}
+
+// SetNillableRecipesAPIKey sets the "recipes_api_key" field if the given value is not nil.
+func (gu *GroupUpdate) SetNillableRecipesAPIKey(s *string) *GroupUpdate {
+	if s != nil {
+		gu.SetRecipesAPIKey(*s)
+	}
+	return gu
+}
+
+// ClearRecipesAPIKey clears the value of the "recipes_api_key" field.
+func (gu *GroupUpdate) ClearRecipesAPIKey() *GroupUpdate {
+	gu.mutation.ClearRecipesAPIKey()
+	return gu
+}
+
 // AddUserIDs adds the "users" edge to the User entity by IDs.
 func (gu *GroupUpdate) AddUserIDs(ids ...uuid.UUID) *GroupUpdate {
 	gu.mutation.AddUserIDs(ids...)
@@ -370,6 +390,11 @@ func (gu *GroupUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Group.name": %w`, err)}
 		}
 	}
+	if v, ok := gu.mutation.RecipesAPIKey(); ok {
+		if err := group.RecipesAPIKeyValidator(v); err != nil {
+			return &ValidationError{Name: "recipes_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.recipes_api_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -393,6 +418,12 @@ func (gu *GroupUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := gu.mutation.Currency(); ok {
 		_spec.SetField(group.FieldCurrency, field.TypeString, value)
+	}
+	if value, ok := gu.mutation.RecipesAPIKey(); ok {
+		_spec.SetField(group.FieldRecipesAPIKey, field.TypeString, value)
+	}
+	if gu.mutation.RecipesAPIKeyCleared() {
+		_spec.ClearField(group.FieldRecipesAPIKey, field.TypeString)
 	}
 	if gu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -763,6 +794,26 @@ func (guo *GroupUpdateOne) SetNillableCurrency(s *string) *GroupUpdateOne {
 	return guo
 }
 
+// SetRecipesAPIKey sets the "recipes_api_key" field.
+func (guo *GroupUpdateOne) SetRecipesAPIKey(s string) *GroupUpdateOne {
+	guo.mutation.SetRecipesAPIKey(s)
+	return guo
+}
+
+// SetNillableRecipesAPIKey sets the "recipes_api_key" field if the given value is not nil.
+func (guo *GroupUpdateOne) SetNillableRecipesAPIKey(s *string) *GroupUpdateOne {
+	if s != nil {
+		guo.SetRecipesAPIKey(*s)
+	}
+	return guo
+}
+
+// ClearRecipesAPIKey clears the value of the "recipes_api_key" field.
+func (guo *GroupUpdateOne) ClearRecipesAPIKey() *GroupUpdateOne {
+	guo.mutation.ClearRecipesAPIKey()
+	return guo
+}
+
 // AddUserIDs adds the "users" edge to the User entity by IDs.
 func (guo *GroupUpdateOne) AddUserIDs(ids ...uuid.UUID) *GroupUpdateOne {
 	guo.mutation.AddUserIDs(ids...)
@@ -1076,6 +1127,11 @@ func (guo *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Group.name": %w`, err)}
 		}
 	}
+	if v, ok := guo.mutation.RecipesAPIKey(); ok {
+		if err := group.RecipesAPIKeyValidator(v); err != nil {
+			return &ValidationError{Name: "recipes_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.recipes_api_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1116,6 +1172,12 @@ func (guo *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error
 	}
 	if value, ok := guo.mutation.Currency(); ok {
 		_spec.SetField(group.FieldCurrency, field.TypeString, value)
+	}
+	if value, ok := guo.mutation.RecipesAPIKey(); ok {
+		_spec.SetField(group.FieldRecipesAPIKey, field.TypeString, value)
+	}
+	if guo.mutation.RecipesAPIKeyCleared() {
+		_spec.ClearField(group.FieldRecipesAPIKey, field.TypeString)
 	}
 	if guo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{

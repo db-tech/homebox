@@ -5,8 +5,11 @@
 // third party, and the only one that sends anything about what you own. It
 // sends the name, the quantity and the days left of pantry items, and nothing
 // else: no locations, no prices, no notes, no account or group identifier. It
-// is off unless Recipes.Enabled is set, and it only ever runs when somebody
-// presses the button - never in the background, never on a page load.
+// It runs only when somebody presses the button - never in the background,
+// never on a page load - and only when a key has been configured. The key
+// normally comes from the group, set in the settings, so a household can switch
+// this on for itself; a server-wide key may be supplied instead. Setting
+// Recipes.Enabled to false forbids it outright, whatever any group has stored.
 //
 // The model is deliberately not asked to work anything out. What is in stock
 // and what expires when is decided here, before the request goes out; the model
@@ -69,7 +72,8 @@ type Idea struct {
 }
 
 type Service struct {
-	enabled  bool
+	enabled bool
+	// apiKey is the server-wide fallback, used when a group has none of its own.
 	apiKey   string
 	model    string
 	endpoint string
@@ -92,8 +96,11 @@ func New(enabled bool, apiKey, model string) *Service {
 	}
 }
 
+// Enabled says whether the server permits meal ideas at all. It says nothing
+// about whether a key has been configured - that is per group, and asking here
+// would need a group to ask about.
 func (s *Service) Enabled() bool {
-	return s != nil && s.enabled && s.apiKey != ""
+	return s != nil && s.enabled
 }
 
 const systemPrompt = `You suggest meals from what somebody already has in their pantry.
@@ -134,12 +141,20 @@ type anthropicResponse struct {
 	} `json:"error"`
 }
 
-// Suggest asks for meal ideas built on the given stock.
-func (s *Service) Suggest(ctx context.Context, stock []Stock) ([]Idea, error) {
-	switch {
-	case s == nil || !s.enabled:
+// Suggest asks for meal ideas built on the given stock, using the group's key
+// or, when it has none, the server-wide one.
+func (s *Service) Suggest(ctx context.Context, apiKey string, stock []Stock) ([]Idea, error) {
+	if s == nil || !s.enabled {
 		return nil, ErrDisabled
-	case s.apiKey == "":
+	}
+
+	key := strings.TrimSpace(apiKey)
+	if key == "" {
+		key = s.apiKey
+	}
+
+	switch {
+	case key == "":
 		return nil, ErrNoKey
 	case len(stock) == 0:
 		return nil, ErrEmptyPantry
@@ -161,7 +176,7 @@ func (s *Service) Suggest(ctx context.Context, stock []Stock) ([]Idea, error) {
 	}
 
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("x-api-key", s.apiKey)
+	req.Header.Set("x-api-key", key)
 	req.Header.Set("anthropic-version", anthropicVersion)
 
 	resp, err := s.client.Do(req)

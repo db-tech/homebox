@@ -29,6 +29,18 @@ func (Group) Fields() []ent.Field {
 			NotEmpty(),
 		field.String("currency").
 			Default("usd"),
+		// API key for the meal suggestions, kept per group so a household can
+		// switch them on itself rather than needing the deployment edited.
+		//
+		// Sensitive keeps it out of String() and out of anything Ent marshals,
+		// because it must never travel back to a browser. It is stored in plain
+		// text, as notifier URLs already are: Homebox has no secret store, and
+		// encrypting it with a key that sits in the same database would look
+		// like protection without being any.
+		field.String("recipes_api_key").
+			Sensitive().
+			MaxLen(255).
+			Optional(),
 	}
 }
 

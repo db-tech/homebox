@@ -193,6 +193,10 @@ func init() {
 	groupDescCurrency := groupFields[1].Descriptor()
 	// group.DefaultCurrency holds the default value on creation for the currency field.
 	group.DefaultCurrency = groupDescCurrency.Default.(string)
+	// groupDescRecipesAPIKey is the schema descriptor for recipes_api_key field.
+	groupDescRecipesAPIKey := groupFields[2].Descriptor()
+	// group.RecipesAPIKeyValidator is a validator for the "recipes_api_key" field. It is called by the builders before save.
+	group.RecipesAPIKeyValidator = groupDescRecipesAPIKey.Validators[0].(func(string) error)
 	// groupDescID is the schema descriptor for id field.
 	groupDescID := groupMixinFields0[0].Descriptor()
 	// group.DefaultID holds the default value on creation for the id field.

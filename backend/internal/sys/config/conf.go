@@ -33,14 +33,21 @@ type Config struct {
 
 // RecipesConf configures meal suggestions built from what the pantry holds.
 //
-// Off by default, and it stays off without an API key. This is the only part of
-// Homebox that sends anything about what you own to a third party: the name,
-// quantity and days-left of pantry items, and nothing else. Set
-// HBOX_RECIPES_ENABLED=true and HBOX_RECIPES_API_KEY to switch it on.
+// This is the only part of Homebox that sends anything about what you own to a
+// third party: the name, quantity and days-left of pantry items, and nothing
+// else. Nothing goes anywhere until an API key exists, and the normal place for
+// that key is the group settings in the app, so a household can switch this on
+// without the deployment being edited.
+//
+// Enabled is the operator's veto rather than the on switch: leave it true and
+// nothing happens until somebody stores a key; set HBOX_RECIPES_ENABLED=false
+// to forbid it outright, whatever any group has saved. APIKey is an optional
+// server-wide fallback for deployments that would rather keep the secret out of
+// the database, and is used only by groups that have none of their own.
 type RecipesConf struct {
-	Enabled bool   `yaml:"enabled"  conf:"default:false"`
-	APIKey  string `yaml:"api_key"  conf:"mask"`
-	Model   string `yaml:"model"    conf:"default:claude-haiku-4-5-20251001"`
+	Enabled bool   `yaml:"enabled" conf:"default:true"`
+	APIKey  string `yaml:"api_key" conf:"mask"`
+	Model   string `yaml:"model"   conf:"default:claude-haiku-4-5-20251001"`
 }
 
 type Options struct {

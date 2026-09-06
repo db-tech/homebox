@@ -372,9 +372,11 @@
             "empty": "Noch nichts im Vorrat, woraus sich etwas machen ließe. Scanne erst ein paar Sachen ein.",
             "failed": "Es kamen keine Vorschläge zurück",
             "missing": "Du bräuchtest noch",
+            "needs_key": "Dafür wird ein Anthropic-API-Schlüssel gebraucht. Den hinterlegst du einmal in den Einstellungen; vorher wird nichts gesendet.",
             "privacy": "Sendet Name, Anzahl und Resttage deiner Vorratsartikel an Anthropic, sonst nichts - keine Orte, keine Preise, nichts, was zu dir gehört. Nur auf Knopfdruck.",
             "subtitle": "Gerichte rund um das, was zuerst schlecht wird",
             "title": "Was koche ich?",
+            "to_settings": "In den Einstellungen einrichten",
             "uses": "Verbraucht"
         },
         "kiosk": {
@@ -502,6 +504,20 @@
         "notifier_modal": "{ type, select, true {Bearbeiten} false {Erstellen} other {Andere}} Notifier",
         "notifiers": "Benachrichtigungen",
         "notifiers_sub": "Erhalte Benachrichtigungen über bevorstehende Wartungserinnerungen",
+        "recipes": {
+            "active": "Aktiv. Der Knopf auf der Vorratsseite funktioniert.",
+            "explainer": "Sendet Name, Anzahl und Resttage deiner Vorratsartikel an Anthropic, wenn du auf der Vorratsseite den Knopf drückst - sonst nichts, und nie im Hintergrund. Schlüssel gibt es auf console.anthropic.com. Ein Druck kostet den Bruchteil eines Cents.",
+            "failed": "Der Schlüssel konnte nicht gespeichert werden",
+            "inactive": "Kein Schlüssel hinterlegt, es wird also nie etwas gesendet.",
+            "label": "Anthropic-API-Schlüssel",
+            "remove": "Entfernen",
+            "removed": "Schlüssel entfernt",
+            "save": "Schlüssel speichern",
+            "saved": "Schlüssel gespeichert",
+            "stored": "Ein Schlüssel ist hinterlegt - zum Ersetzen neu eingeben",
+            "subtitle": "Wird für die Kochvorschläge auf der Vorratsseite gebraucht",
+            "title": "Kochvorschläge"
+        },
         "test": "Test",
         "theme_settings": "Themes",
         "theme_settings_sub": "Theme-Einstellungen werden im lokalen Speicher deines Browsers gespeichert. Du kannst das Theme jederzeit ändern.\nWenn du Probleme hast, dein Theme einzustellen, versuche, die Seite neu zu laden.",

@@ -212,16 +212,33 @@ This is a recipe suggestion only in passing. The point is the other direction:
 you have cream that goes off on Thursday, and this tells you what to do about it
 tonight.
 
-It is **off by default** and has to be switched on deliberately:
+### Switching it on
+
+It needs an Anthropic API key, and the normal place for it is **Profile → Meal
+suggestions**. Paste the key, save, and the button on the pantry page starts
+working. **Remove** deletes it again, and with no key stored nothing is ever
+sent anywhere.
+
+The key is stored in your database in plain text, the same as notifier URLs
+already are. Homebox has no secret store, and encrypting it with a key sitting
+in the same database would look like protection without being any. It is never
+sent back to the browser: the app only ever learns *whether* there is one.
+
+Anyone in your group can set, replace and use the key — it is a shared
+household setting, and using it spends money on that key.
+
+Two environment variables remain, for deployments that would rather not have the
+secret in the database at all:
 
 ```
-HBOX_RECIPES_ENABLED=true
-HBOX_RECIPES_API_KEY=sk-ant-...
-HBOX_RECIPES_MODEL=claude-haiku-4-5-20251001   # optional
+HBOX_RECIPES_API_KEY=sk-ant-...              # used by groups that have no key of their own
+HBOX_RECIPES_MODEL=claude-haiku-4-5-20251001 # optional
+HBOX_RECIPES_ENABLED=false                   # forbid the feature outright
 ```
 
-Without a key it stays off however the flag is set, and the button does not
-appear at all.
+`HBOX_RECIPES_ENABLED` is a veto rather than an on switch. Left alone nothing
+happens until somebody stores a key; set to `false` the feature disappears
+whatever any group has saved.
 
 ### What leaves your server
 

@@ -48,22 +48,50 @@ func answer(ideas string) string {
 
 func TestSuggest_DisabledSendsNothing(t *testing.T) {
 	svc := New(false, "test-key", "")
-	_, err := svc.Suggest(context.Background(), []Stock{{Name: "Sahne", Quantity: 1}})
+	_, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Sahne", Quantity: 1}})
 	assert.ErrorIs(t, err, ErrDisabled)
 }
 
-func TestSuggest_EnabledWithoutKeyIsRefused(t *testing.T) {
+func TestSuggest_NoKeyAnywhereIsRefused(t *testing.T) {
 	svc := New(true, "  ", "")
-	assert.False(t, svc.Enabled())
 
-	_, err := svc.Suggest(context.Background(), []Stock{{Name: "Sahne", Quantity: 1}})
+	// The server permits it; nobody has configured a key. That is not an error
+	// in the deployment, it is a thing the user still has to do.
+	assert.True(t, svc.Enabled())
+
+	_, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Sahne", Quantity: 1}})
 	assert.ErrorIs(t, err, ErrNoKey)
+}
+
+func TestSuggest_GroupKeyIsUsedInPreferenceToTheServerOne(t *testing.T) {
+	svc, seen, _ := stub(t, answer(`{"ideas":[{"title":"S","why":"w","uses":[],"missing":[]}]}`), http.StatusOK)
+
+	_, err := svc.Suggest(context.Background(), "group-key", []Stock{{Name: "Reis", Quantity: 1}})
+	require.NoError(t, err)
+
+	assert.Equal(t, "group-key", seen.Header.Get("x-api-key"))
+}
+
+func TestSuggest_ServerKeyStandsInWhenTheGroupHasNone(t *testing.T) {
+	svc, seen, _ := stub(t, answer(`{"ideas":[{"title":"S","why":"w","uses":[],"missing":[]}]}`), http.StatusOK)
+
+	_, err := svc.Suggest(context.Background(), "   ", []Stock{{Name: "Reis", Quantity: 1}})
+	require.NoError(t, err)
+
+	assert.Equal(t, "test-key", seen.Header.Get("x-api-key"), "the service was built with this one")
+}
+
+func TestSuggest_DisabledBeatsAnyStoredKey(t *testing.T) {
+	svc := New(false, "", "")
+
+	_, err := svc.Suggest(context.Background(), "group-key", []Stock{{Name: "Reis", Quantity: 1}})
+	assert.ErrorIs(t, err, ErrDisabled, "a group must not be able to override the server saying no")
 }
 
 func TestSuggest_EmptyPantryNeverReachesOut(t *testing.T) {
 	svc, _, body := stub(t, answer(`{"ideas":[]}`), http.StatusOK)
 
-	_, err := svc.Suggest(context.Background(), nil)
+	_, err := svc.Suggest(context.Background(), "", nil)
 	assert.ErrorIs(t, err, ErrEmptyPantry)
 	assert.Empty(t, *body, "nothing should have been sent")
 }
@@ -71,7 +99,7 @@ func TestSuggest_EmptyPantryNeverReachesOut(t *testing.T) {
 func TestSuggest_SendsOnlyNameQuantityAndDaysLeft(t *testing.T) {
 	svc, seen, body := stub(t, answer(`{"ideas":[{"title":"Rahmsauce","why":"Sahne","uses":["Sahne"],"missing":[]}]}`), http.StatusOK)
 
-	_, err := svc.Suggest(context.Background(), []Stock{
+	_, err := svc.Suggest(context.Background(), "", []Stock{
 		{Name: "Sahne", Quantity: 2, DaysLeft: days(3)},
 		{Name: "Reis", Quantity: 1},
 	})
@@ -95,7 +123,7 @@ func TestSuggest_SendsOnlyNameQuantityAndDaysLeft(t *testing.T) {
 func TestSuggest_MostUrgentItemGoesFirst(t *testing.T) {
 	svc, _, body := stub(t, answer(`{"ideas":[{"title":"X","why":"y","uses":[],"missing":[]}]}`), http.StatusOK)
 
-	_, err := svc.Suggest(context.Background(), []Stock{
+	_, err := svc.Suggest(context.Background(), "", []Stock{
 		{Name: "Reis", Quantity: 1},
 		{Name: "Nudeln", Quantity: 1, DaysLeft: days(200)},
 		{Name: "Sahne", Quantity: 1, DaysLeft: days(2)},
@@ -120,7 +148,7 @@ func TestSuggest_InventedIngredientsAreNotClaimedAsInStock(t *testing.T) {
 		`{"ideas":[{"title":"Rahmschnitzel","why":"Sahne","uses":["Sahne","Schweineschnitzel"],"missing":[]}]}`,
 	), http.StatusOK)
 
-	ideas, err := svc.Suggest(context.Background(), []Stock{{Name: "Sahne", Quantity: 1, DaysLeft: days(2)}})
+	ideas, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Sahne", Quantity: 1, DaysLeft: days(2)}})
 	require.NoError(t, err)
 	require.Len(t, ideas, 1)
 
@@ -133,7 +161,7 @@ func TestSuggest_MatchesItemNamesRegardlessOfCase(t *testing.T) {
 		`{"ideas":[{"title":"Reisgericht","why":"weil","uses":["reis"],"missing":[]}]}`,
 	), http.StatusOK)
 
-	ideas, err := svc.Suggest(context.Background(), []Stock{{Name: "Reis", Quantity: 1}})
+	ideas, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Reis", Quantity: 1}})
 	require.NoError(t, err)
 
 	// Reported back with the spelling the pantry uses, so the name can be
@@ -144,7 +172,7 @@ func TestSuggest_MatchesItemNamesRegardlessOfCase(t *testing.T) {
 func TestSuggest_ToleratesAFencedAnswer(t *testing.T) {
 	svc, _, _ := stub(t, answer("```json\n{\"ideas\":[{\"title\":\"Suppe\",\"why\":\"w\",\"uses\":[],\"missing\":[]}]}\n```"), http.StatusOK)
 
-	ideas, err := svc.Suggest(context.Background(), []Stock{{Name: "Brühe", Quantity: 1}})
+	ideas, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Brühe", Quantity: 1}})
 	require.NoError(t, err)
 	assert.Equal(t, "Suppe", ideas[0].Title)
 }
@@ -152,21 +180,21 @@ func TestSuggest_ToleratesAFencedAnswer(t *testing.T) {
 func TestSuggest_UnusableAnswerIsAnError(t *testing.T) {
 	svc, _, _ := stub(t, answer("I could not think of anything."), http.StatusOK)
 
-	_, err := svc.Suggest(context.Background(), []Stock{{Name: "Reis", Quantity: 1}})
+	_, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Reis", Quantity: 1}})
 	assert.Error(t, err)
 }
 
 func TestSuggest_EmptyIdeaListIsAnError(t *testing.T) {
 	svc, _, _ := stub(t, answer(`{"ideas":[{"title":"   ","why":"","uses":[],"missing":[]}]}`), http.StatusOK)
 
-	_, err := svc.Suggest(context.Background(), []Stock{{Name: "Reis", Quantity: 1}})
+	_, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Reis", Quantity: 1}})
 	assert.Error(t, err, "a suggestion with no title is not a suggestion")
 }
 
 func TestSuggest_ApiErrorIsReported(t *testing.T) {
 	svc, _, _ := stub(t, `{"error":{"message":"credit balance is too low"}}`, http.StatusBadRequest)
 
-	_, err := svc.Suggest(context.Background(), []Stock{{Name: "Reis", Quantity: 1}})
+	_, err := svc.Suggest(context.Background(), "", []Stock{{Name: "Reis", Quantity: 1}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "credit balance is too low")
 }
