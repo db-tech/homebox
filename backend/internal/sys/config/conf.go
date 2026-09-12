@@ -29,6 +29,22 @@ type Config struct {
 	Options    Options        `yaml:"options"`
 	LabelMaker LabelMakerConf `yaml:"labelmaker"`
 	Recipes    RecipesConf    `yaml:"recipes"`
+	Voice      VoiceConf      `yaml:"voice"`
+}
+
+// VoiceConf configures adding an item by speaking it.
+//
+// Two providers are involved because the model that reads the transcript does
+// not take audio: the recording goes to OpenAI to be transcribed, the words go
+// to Anthropic to be turned into field values. Both keys normally live in the
+// group settings.
+//
+// Enabled is the operator's veto rather than the on switch, exactly as for the
+// recipes: nothing happens until a key exists, and false forbids it outright.
+// APIKey is an optional server-wide transcription key.
+type VoiceConf struct {
+	Enabled bool   `yaml:"enabled" conf:"default:true"`
+	APIKey  string `yaml:"api_key" conf:"mask"`
 }
 
 // RecipesConf configures meal suggestions built from what the pantry holds.

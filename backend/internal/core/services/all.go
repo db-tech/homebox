@@ -5,6 +5,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/core/currencies"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/mealideas"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/productlookup"
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services/voiceentry"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
 )
 
@@ -16,6 +17,7 @@ type AllServices struct {
 	Currencies        *currencies.CurrencyRegistry
 	ProductLookup     *productlookup.Service
 	MealIdeas         *mealideas.Service
+	VoiceEntry        *voiceentry.Service
 }
 
 type OptionsFunc func(*options)
@@ -25,6 +27,12 @@ type options struct {
 	currencies           []currencies.Currency
 	productLookup        bool
 	mealIdeas            mealIdeasOptions
+	voice                voiceOptions
+}
+
+type voiceOptions struct {
+	enabled bool
+	apiKey  string
 }
 
 type mealIdeasOptions struct {
@@ -87,6 +95,12 @@ func New(repos *repo.AllRepos, opts ...OptionsFunc) *AllServices {
 		Currencies:        currencies.NewCurrencyService(options.currencies),
 		ProductLookup:     productlookup.New(options.productLookup),
 		MealIdeas:         mealideas.New(options.mealIdeas.enabled, options.mealIdeas.apiKey, options.mealIdeas.model),
+		VoiceEntry: voiceentry.New(
+			options.voice.enabled,
+			options.voice.apiKey,
+			options.mealIdeas.apiKey,
+			options.mealIdeas.model,
+		),
 	}
 }
 
@@ -97,5 +111,15 @@ func New(repos *repo.AllRepos, opts ...OptionsFunc) *AllServices {
 func WithMealIdeas(enabled bool, apiKey, model string) func(*options) {
 	return func(o *options) {
 		o.mealIdeas = mealIdeasOptions{enabled: enabled, apiKey: apiKey, model: model}
+	}
+}
+
+// WithVoiceEntry enables adding an item by speaking it. Off by default here for
+// the same reason as the other two: anything constructing the services without
+// saying so must never reach out to a third party, and this one would send a
+// recording of somebody's voice.
+func WithVoiceEntry(enabled bool, apiKey string) func(*options) {
+	return func(o *options) {
+		o.voice = voiceOptions{enabled: enabled, apiKey: apiKey}
 	}
 }

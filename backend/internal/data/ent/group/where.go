@@ -81,6 +81,11 @@ func RecipesAPIKey(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldRecipesAPIKey, v))
 }
 
+// VoiceAPIKey applies equality check predicate on the "voice_api_key" field. It's identical to VoiceAPIKeyEQ.
+func VoiceAPIKey(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldVoiceAPIKey, v))
+}
+
 // HouseholdSize applies equality check predicate on the "household_size" field. It's identical to HouseholdSizeEQ.
 func HouseholdSize(v int) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldHouseholdSize, v))
@@ -379,6 +384,81 @@ func RecipesAPIKeyEqualFold(v string) predicate.Group {
 // RecipesAPIKeyContainsFold applies the ContainsFold predicate on the "recipes_api_key" field.
 func RecipesAPIKeyContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldRecipesAPIKey, v))
+}
+
+// VoiceAPIKeyEQ applies the EQ predicate on the "voice_api_key" field.
+func VoiceAPIKeyEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyNEQ applies the NEQ predicate on the "voice_api_key" field.
+func VoiceAPIKeyNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyIn applies the In predicate on the "voice_api_key" field.
+func VoiceAPIKeyIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldVoiceAPIKey, vs...))
+}
+
+// VoiceAPIKeyNotIn applies the NotIn predicate on the "voice_api_key" field.
+func VoiceAPIKeyNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldVoiceAPIKey, vs...))
+}
+
+// VoiceAPIKeyGT applies the GT predicate on the "voice_api_key" field.
+func VoiceAPIKeyGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyGTE applies the GTE predicate on the "voice_api_key" field.
+func VoiceAPIKeyGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyLT applies the LT predicate on the "voice_api_key" field.
+func VoiceAPIKeyLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyLTE applies the LTE predicate on the "voice_api_key" field.
+func VoiceAPIKeyLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyContains applies the Contains predicate on the "voice_api_key" field.
+func VoiceAPIKeyContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyHasPrefix applies the HasPrefix predicate on the "voice_api_key" field.
+func VoiceAPIKeyHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyHasSuffix applies the HasSuffix predicate on the "voice_api_key" field.
+func VoiceAPIKeyHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyIsNil applies the IsNil predicate on the "voice_api_key" field.
+func VoiceAPIKeyIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldVoiceAPIKey))
+}
+
+// VoiceAPIKeyNotNil applies the NotNil predicate on the "voice_api_key" field.
+func VoiceAPIKeyNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldVoiceAPIKey))
+}
+
+// VoiceAPIKeyEqualFold applies the EqualFold predicate on the "voice_api_key" field.
+func VoiceAPIKeyEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldVoiceAPIKey, v))
+}
+
+// VoiceAPIKeyContainsFold applies the ContainsFold predicate on the "voice_api_key" field.
+func VoiceAPIKeyContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldVoiceAPIKey, v))
 }
 
 // HouseholdSizeEQ applies the EQ predicate on the "household_size" field.

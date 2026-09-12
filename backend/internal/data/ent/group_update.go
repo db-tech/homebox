@@ -90,6 +90,26 @@ func (gu *GroupUpdate) ClearRecipesAPIKey() *GroupUpdate {
 	return gu
 }
 
+// SetVoiceAPIKey sets the "voice_api_key" field.
+func (gu *GroupUpdate) SetVoiceAPIKey(s string) *GroupUpdate {
+	gu.mutation.SetVoiceAPIKey(s)
+	return gu
+}
+
+// SetNillableVoiceAPIKey sets the "voice_api_key" field if the given value is not nil.
+func (gu *GroupUpdate) SetNillableVoiceAPIKey(s *string) *GroupUpdate {
+	if s != nil {
+		gu.SetVoiceAPIKey(*s)
+	}
+	return gu
+}
+
+// ClearVoiceAPIKey clears the value of the "voice_api_key" field.
+func (gu *GroupUpdate) ClearVoiceAPIKey() *GroupUpdate {
+	gu.mutation.ClearVoiceAPIKey()
+	return gu
+}
+
 // SetHouseholdSize sets the "household_size" field.
 func (gu *GroupUpdate) SetHouseholdSize(i int) *GroupUpdate {
 	gu.mutation.ResetHouseholdSize()
@@ -469,6 +489,11 @@ func (gu *GroupUpdate) check() error {
 			return &ValidationError{Name: "recipes_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.recipes_api_key": %w`, err)}
 		}
 	}
+	if v, ok := gu.mutation.VoiceAPIKey(); ok {
+		if err := group.VoiceAPIKeyValidator(v); err != nil {
+			return &ValidationError{Name: "voice_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.voice_api_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -498,6 +523,12 @@ func (gu *GroupUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if gu.mutation.RecipesAPIKeyCleared() {
 		_spec.ClearField(group.FieldRecipesAPIKey, field.TypeString)
+	}
+	if value, ok := gu.mutation.VoiceAPIKey(); ok {
+		_spec.SetField(group.FieldVoiceAPIKey, field.TypeString, value)
+	}
+	if gu.mutation.VoiceAPIKeyCleared() {
+		_spec.ClearField(group.FieldVoiceAPIKey, field.TypeString)
 	}
 	if value, ok := gu.mutation.HouseholdSize(); ok {
 		_spec.SetField(group.FieldHouseholdSize, field.TypeInt, value)
@@ -912,6 +943,26 @@ func (guo *GroupUpdateOne) ClearRecipesAPIKey() *GroupUpdateOne {
 	return guo
 }
 
+// SetVoiceAPIKey sets the "voice_api_key" field.
+func (guo *GroupUpdateOne) SetVoiceAPIKey(s string) *GroupUpdateOne {
+	guo.mutation.SetVoiceAPIKey(s)
+	return guo
+}
+
+// SetNillableVoiceAPIKey sets the "voice_api_key" field if the given value is not nil.
+func (guo *GroupUpdateOne) SetNillableVoiceAPIKey(s *string) *GroupUpdateOne {
+	if s != nil {
+		guo.SetVoiceAPIKey(*s)
+	}
+	return guo
+}
+
+// ClearVoiceAPIKey clears the value of the "voice_api_key" field.
+func (guo *GroupUpdateOne) ClearVoiceAPIKey() *GroupUpdateOne {
+	guo.mutation.ClearVoiceAPIKey()
+	return guo
+}
+
 // SetHouseholdSize sets the "household_size" field.
 func (guo *GroupUpdateOne) SetHouseholdSize(i int) *GroupUpdateOne {
 	guo.mutation.ResetHouseholdSize()
@@ -1304,6 +1355,11 @@ func (guo *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "recipes_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.recipes_api_key": %w`, err)}
 		}
 	}
+	if v, ok := guo.mutation.VoiceAPIKey(); ok {
+		if err := group.VoiceAPIKeyValidator(v); err != nil {
+			return &ValidationError{Name: "voice_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.voice_api_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1350,6 +1406,12 @@ func (guo *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error
 	}
 	if guo.mutation.RecipesAPIKeyCleared() {
 		_spec.ClearField(group.FieldRecipesAPIKey, field.TypeString)
+	}
+	if value, ok := guo.mutation.VoiceAPIKey(); ok {
+		_spec.SetField(group.FieldVoiceAPIKey, field.TypeString, value)
+	}
+	if guo.mutation.VoiceAPIKeyCleared() {
+		_spec.ClearField(group.FieldVoiceAPIKey, field.TypeString)
 	}
 	if value, ok := guo.mutation.HouseholdSize(); ok {
 		_spec.SetField(group.FieldHouseholdSize, field.TypeInt, value)

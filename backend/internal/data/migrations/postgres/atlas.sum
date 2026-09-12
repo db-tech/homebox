@@ -1,6 +1,7 @@
-h1:twi9NWdWkkQ/zjJTura6oUEIpICQ49AQ/jGpXE4tRRU=
+h1:ZLx1uWIhv7xr3jZkGiqQFGiWaSWCXppFQwRqtEuesxM=
 20241027025146_init.sql h1:PJhm+pjGRtFfgmGu7MwJo8+bVelVfU5LB+LZ/c8nnGE=
 20250112202302_catchup.sql h1:DCzm15PdJewaPY7hzhFWiBJqYxEDd0ZKGOUhK0/1hgc=
 20260829090331_add_pantry_fields.sql h1:ByqpNMRkafTjtWFmBaKUic3rsqIfiO6ZxgXEntdJTEs=
 20260906170654_add_recipes_api_key.sql h1:748RtxuUuAIq3nabXfqXPhJy/d6tuSV1ITZfE0+qAIA=
 20260906191725_add_emergency_stock.sql h1:wLQdtGNgxklRKLntdatyQ4pTf9HO+L/pHDlg5fJOGLs=
+20260912135243_add_voice_api_key.sql h1:6d/tcmfK7/q9Ur1p1Lm++PbN71THquol5Nv6ButylFA=

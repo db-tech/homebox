@@ -3,6 +3,17 @@
     <template #title> {{ $t("components.item.create_modal.title") }} </template>
     <form @submit.prevent="create()">
       <LocationSelector v-model="form.location" />
+
+      <!-- For everything without a barcode. Fills the fields below rather than
+           creating anything, so a mishearing is caught before it is saved. -->
+      <div v-if="canSpeak" class="mt-2">
+        <FormVoiceCapture :busy="listening" @recorded="fillFromVoice" />
+        <p v-if="heard" class="mt-1 text-xs italic opacity-60">&ldquo;{{ heard }}&rdquo;</p>
+        <p v-if="spokenQuantity > 1" class="mt-1 text-xs opacity-70">
+          {{ $t("components.voice.quantity", { n: spokenQuantity }) }}
+        </p>
+      </div>
+
       <FormTextField
         ref="nameInput"
         v-model="form.name"
@@ -97,6 +108,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useI18n } from "vue-i18n";
   import type { ItemCreate, LabelOut, LocationOut } from "~~/lib/api/types/data-contracts";
   import type { PhotoPreview } from "~~/lib/api/types/non-generated";
   import { useLabelStore } from "~~/stores/labels";
@@ -120,7 +132,9 @@
   });
 
   const api = useUserApi();
+  const pubApi = usePublicApi();
   const toast = useNotifier();
+  const { t, locale } = useI18n();
 
   const locationsStore = useLocationStore();
   const locations = computed(() => locationsStore.allLocations);
@@ -163,6 +177,53 @@
   });
 
   const showPantry = ref(false);
+
+  // Speaking an item is for the things a scanner cannot help with: everything
+  // without a barcode. The result fills the form rather than creating anything,
+  // because speech recognition mishears brand names.
+  const { data: serverStatus } = useAsyncData(async () => {
+    const { data } = await pubApi.status();
+    return data ?? null;
+  });
+
+  const { data: group } = useAsyncData(async () => {
+    const { data } = await api.group.get();
+    return data ?? null;
+  });
+
+  const canSpeak = computed(() => !!serverStatus.value?.voiceEntry && !!group.value?.hasVoiceApiKey);
+
+  const listening = ref(false);
+  const heard = ref("");
+
+  async function fillFromVoice(audio: Blob, filename: string) {
+    listening.value = true;
+    heard.value = "";
+
+    const { data, error } = await api.items.voiceDraft(audio, filename, locale.value);
+    listening.value = false;
+
+    if (error || !data) {
+      toast.error(t("components.voice.failed"));
+      return;
+    }
+
+    heard.value = data.transcript;
+    form.name = data.name;
+    // Only overwrite a description that is still empty: if somebody typed one
+    // and then spoke, the typing was the deliberate act.
+    if (!form.description.trim()) {
+      form.description = data.description;
+    }
+    spokenQuantity.value = data.quantity;
+  }
+
+  /**
+   * The quantity cannot be set while creating - ItemCreate has no such field -
+   * so a spoken "drei Packungen" is applied straight afterwards. Worth the
+   * second call: saying how many is half the reason to speak it at all.
+   */
+  const spokenQuantity = ref(1);
 
   const { shift } = useMagicKeys();
 
@@ -245,6 +306,19 @@
 
     toast.success("Item created");
 
+    if (spokenQuantity.value > 1) {
+      const { error: quantityError } = await api.items.patch(data.id, {
+        id: data.id,
+        quantity: spokenQuantity.value,
+      });
+
+      // The item exists either way; a failed quantity is worth a word rather
+      // than losing what was just created.
+      if (quantityError) {
+        toast.error(t("components.voice.quantity_failed"));
+      }
+    }
+
     // If the photo was provided, upload it
     // NOTE: This is not transactional. It's entirely possible for some of the photos to successfully upload and the rest to fail, which will result in missing photos
     for (const photo of form.photos) {
@@ -265,6 +339,8 @@
     form.color = "";
     form.photos = [];
     form.expiryDate = null;
+    spokenQuantity.value = 1;
+    heard.value = "";
     focused.value = false;
     loading.value = false;
 

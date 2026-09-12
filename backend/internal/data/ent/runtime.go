@@ -197,6 +197,10 @@ func init() {
 	groupDescRecipesAPIKey := groupFields[2].Descriptor()
 	// group.RecipesAPIKeyValidator is a validator for the "recipes_api_key" field. It is called by the builders before save.
 	group.RecipesAPIKeyValidator = groupDescRecipesAPIKey.Validators[0].(func(string) error)
+	// groupDescVoiceAPIKey is the schema descriptor for voice_api_key field.
+	groupDescVoiceAPIKey := groupFields[3].Descriptor()
+	// group.VoiceAPIKeyValidator is a validator for the "voice_api_key" field. It is called by the builders before save.
+	group.VoiceAPIKeyValidator = groupDescVoiceAPIKey.Validators[0].(func(string) error)
 	// groupDescID is the schema descriptor for id field.
 	groupDescID := groupMixinFields0[0].Descriptor()
 	// group.DefaultID holds the default value on creation for the id field.

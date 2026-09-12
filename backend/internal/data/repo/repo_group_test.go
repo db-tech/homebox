@@ -95,6 +95,51 @@ func TestGroupRepository_RecipesAPIKey(t *testing.T) {
 	assert.Empty(t, gone)
 }
 
+// The two keys are independent: setting one must not disturb the other, or
+// configuring voice entry would switch the meal suggestions off.
+func TestGroupRepository_TheTwoKeysDoNotInterfere(t *testing.T) {
+	ctx := context.Background()
+
+	group, err := tRepos.Groups.GroupCreate(ctx, "__test__.two_keys")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Groups.db.Group.DeleteOneID(group.ID).Exec(ctx) })
+
+	base := GroupUpdate{Name: group.Name, Currency: group.Currency}
+
+	recipes := "sk-ant-recipes"
+	withRecipes := base
+	withRecipes.RecipesAPIKey = &recipes
+	_, err = tRepos.Groups.GroupUpdate(ctx, group.ID, withRecipes)
+	require.NoError(t, err)
+
+	voice := "sk-openai-voice"
+	withVoice := base
+	withVoice.VoiceAPIKey = &voice
+	updated, err := tRepos.Groups.GroupUpdate(ctx, group.ID, withVoice)
+	require.NoError(t, err)
+
+	assert.True(t, updated.HasRecipesAPIKey, "setting the voice key must leave the other one alone")
+	assert.True(t, updated.HasVoiceAPIKey)
+
+	storedVoice, err := tRepos.Groups.VoiceAPIKey(ctx, group.ID)
+	require.NoError(t, err)
+	assert.Equal(t, voice, storedVoice)
+
+	storedRecipes, err := tRepos.Groups.RecipesAPIKey(ctx, group.ID)
+	require.NoError(t, err)
+	assert.Equal(t, recipes, storedRecipes)
+
+	// Clearing one leaves the other.
+	blank := ""
+	cleared := base
+	cleared.VoiceAPIKey = &blank
+	afterClear, err := tRepos.Groups.GroupUpdate(ctx, group.ID, cleared)
+	require.NoError(t, err)
+
+	assert.False(t, afterClear.HasVoiceAPIKey)
+	assert.True(t, afterClear.HasRecipesAPIKey)
+}
+
 // Whatever else changes, the key must never be serialised towards a browser.
 func TestGroupRepository_KeyIsNotInTheJSON(t *testing.T) {
 	ctx := context.Background()

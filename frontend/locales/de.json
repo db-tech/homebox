@@ -117,6 +117,17 @@
         },
         "quick_menu": {
             "shortcut_hint": "Verwenden Sie die Zifferntasten, um schnell eine Aktion auszuwählen."
+        },
+        "voice": {
+            "failed": "Die Aufnahme konnte nicht gelesen werden",
+            "hint": "Oder einfach sagen, was es ist",
+            "no_microphone": "Kein Mikrofon, oder der Zugriff wurde abgelehnt",
+            "quantity": "Verstanden: {n} Stück",
+            "quantity_failed": "Der Artikel wurde angelegt, die Menge ließ sich aber nicht setzen",
+            "start": "Einsprechen",
+            "stop": "Stopp ({n} s)",
+            "unsupported": "Dieser Browser kann nicht aufnehmen",
+            "working": "Wird ausgewertet ..."
         }
     },
     "global": {
@@ -556,7 +567,16 @@
         "update_language": "Sprache aktualisieren",
         "url": "URL",
         "user_profile": "Benutzerprofil",
-        "user_profile_sub": "Lade Benutzer ein und verwalte dein Konto."
+        "user_profile_sub": "Lade Benutzer ein und verwalte dein Konto.",
+        "voice": {
+            "active": "Aktiv. Beim Anlegen eines Artikels erscheint das Mikrofon.",
+            "explainer": "Sag, was du anlegst, statt es zu tippen. Die Aufnahme geht zur Transkription an OpenAI, die Wörter werden anschließend mit dem Schlüssel oben von Anthropic in Feldwerte umgesetzt. Angelegt wird nichts, ohne dass du es bestätigst. Schlüssel gibt es auf platform.openai.com. Etwa 0,6 Cent pro Minute Sprache.",
+            "inactive": "Kein Schlüssel hinterlegt, es wird also nie aufgenommen oder gesendet.",
+            "label": "OpenAI-API-Schlüssel",
+            "needs_other": "Dafür wird zusätzlich der Anthropic-Schlüssel oben gebraucht, der das Transkript in Felder umsetzt.",
+            "subtitle": "Um Artikel einzusprechen",
+            "title": "Spracheingabe"
+        }
     },
     "scanner": {
         "error": "Beim Scannen ist ein Fehler aufgetreten",

@@ -31,6 +31,15 @@ export type ItemsQuery = {
   fields?: string[];
 };
 
+/** What a spoken description was turned into. Nothing is created by asking. */
+export interface VoiceDraft {
+  /** What was heard, shown next to the fields so a mishearing is visible. */
+  transcript: string;
+  name: string;
+  quantity: number;
+  description: string;
+}
+
 export class AttachmentsAPI extends BaseAPI {
   add(id: string, file: File | Blob, filename: string, type: AttachmentTypes | null = null) {
     const formData = new FormData();
@@ -84,6 +93,22 @@ export class ItemMaintenanceAPI extends BaseAPI {
 }
 
 export class ItemsApi extends BaseAPI {
+  /**
+   * Turns a short recording into suggested item fields. Creates nothing: the
+   * result fills a form somebody confirms, because speech recognition mishears
+   * brand names and a wrong one saved silently is worse than one typed slowly.
+   */
+  voiceDraft(audio: Blob, filename: string, language: string) {
+    const formData = new FormData();
+    formData.append("audio", audio, filename);
+    formData.append("language", language);
+
+    return this.http.post<FormData, VoiceDraft>({
+      url: route("/items/voice-draft"),
+      data: formData,
+    });
+  }
+
   attachments: AttachmentsAPI;
   maintenance: ItemMaintenanceAPI;
   fields: FieldsAPI;

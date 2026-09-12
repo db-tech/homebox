@@ -3112,6 +3112,7 @@ type GroupMutation struct {
 	name                     *string
 	currency                 *string
 	recipes_api_key          *string
+	voice_api_key            *string
 	household_size           *int
 	addhousehold_size        *int
 	emergency_days           *int
@@ -3439,6 +3440,55 @@ func (m *GroupMutation) RecipesAPIKeyCleared() bool {
 func (m *GroupMutation) ResetRecipesAPIKey() {
 	m.recipes_api_key = nil
 	delete(m.clearedFields, group.FieldRecipesAPIKey)
+}
+
+// SetVoiceAPIKey sets the "voice_api_key" field.
+func (m *GroupMutation) SetVoiceAPIKey(s string) {
+	m.voice_api_key = &s
+}
+
+// VoiceAPIKey returns the value of the "voice_api_key" field in the mutation.
+func (m *GroupMutation) VoiceAPIKey() (r string, exists bool) {
+	v := m.voice_api_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVoiceAPIKey returns the old "voice_api_key" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldVoiceAPIKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVoiceAPIKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVoiceAPIKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVoiceAPIKey: %w", err)
+	}
+	return oldValue.VoiceAPIKey, nil
+}
+
+// ClearVoiceAPIKey clears the value of the "voice_api_key" field.
+func (m *GroupMutation) ClearVoiceAPIKey() {
+	m.voice_api_key = nil
+	m.clearedFields[group.FieldVoiceAPIKey] = struct{}{}
+}
+
+// VoiceAPIKeyCleared returns if the "voice_api_key" field was cleared in this mutation.
+func (m *GroupMutation) VoiceAPIKeyCleared() bool {
+	_, ok := m.clearedFields[group.FieldVoiceAPIKey]
+	return ok
+}
+
+// ResetVoiceAPIKey resets all changes to the "voice_api_key" field.
+func (m *GroupMutation) ResetVoiceAPIKey() {
+	m.voice_api_key = nil
+	delete(m.clearedFields, group.FieldVoiceAPIKey)
 }
 
 // SetHouseholdSize sets the "household_size" field.
@@ -4042,7 +4092,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -4057,6 +4107,9 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.recipes_api_key != nil {
 		fields = append(fields, group.FieldRecipesAPIKey)
+	}
+	if m.voice_api_key != nil {
+		fields = append(fields, group.FieldVoiceAPIKey)
 	}
 	if m.household_size != nil {
 		fields = append(fields, group.FieldHouseholdSize)
@@ -4085,6 +4138,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Currency()
 	case group.FieldRecipesAPIKey:
 		return m.RecipesAPIKey()
+	case group.FieldVoiceAPIKey:
+		return m.VoiceAPIKey()
 	case group.FieldHouseholdSize:
 		return m.HouseholdSize()
 	case group.FieldEmergencyDays:
@@ -4110,6 +4165,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCurrency(ctx)
 	case group.FieldRecipesAPIKey:
 		return m.OldRecipesAPIKey(ctx)
+	case group.FieldVoiceAPIKey:
+		return m.OldVoiceAPIKey(ctx)
 	case group.FieldHouseholdSize:
 		return m.OldHouseholdSize(ctx)
 	case group.FieldEmergencyDays:
@@ -4159,6 +4216,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRecipesAPIKey(v)
+		return nil
+	case group.FieldVoiceAPIKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVoiceAPIKey(v)
 		return nil
 	case group.FieldHouseholdSize:
 		v, ok := value.(int)
@@ -4241,6 +4305,9 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldRecipesAPIKey) {
 		fields = append(fields, group.FieldRecipesAPIKey)
 	}
+	if m.FieldCleared(group.FieldVoiceAPIKey) {
+		fields = append(fields, group.FieldVoiceAPIKey)
+	}
 	if m.FieldCleared(group.FieldHouseholdSize) {
 		fields = append(fields, group.FieldHouseholdSize)
 	}
@@ -4266,6 +4333,9 @@ func (m *GroupMutation) ClearField(name string) error {
 	switch name {
 	case group.FieldRecipesAPIKey:
 		m.ClearRecipesAPIKey()
+		return nil
+	case group.FieldVoiceAPIKey:
+		m.ClearVoiceAPIKey()
 		return nil
 	case group.FieldHouseholdSize:
 		m.ClearHouseholdSize()
@@ -4298,6 +4368,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRecipesAPIKey:
 		m.ResetRecipesAPIKey()
+		return nil
+	case group.FieldVoiceAPIKey:
+		m.ResetVoiceAPIKey()
 		return nil
 	case group.FieldHouseholdSize:
 		m.ResetHouseholdSize()

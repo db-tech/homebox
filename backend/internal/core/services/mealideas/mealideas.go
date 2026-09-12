@@ -19,24 +19,16 @@
 package mealideas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services/llm"
 )
-
-const defaultEndpoint = "https://api.anthropic.com/v1/messages"
-
-// defaultModel is the small, fast model. The job is choosing among a short list
-// of ingredients, which does not need a large one.
-const defaultModel = "claude-haiku-4-5-20251001"
-
-const anthropicVersion = "2023-06-01"
 
 var (
 	// ErrDisabled is returned when the feature is switched off by config.
@@ -74,25 +66,17 @@ type Idea struct {
 type Service struct {
 	enabled bool
 	// apiKey is the server-wide fallback, used when a group has none of its own.
-	apiKey   string
-	model    string
-	endpoint string
-	client   *http.Client
+	apiKey string
+	client *llm.Client
 }
 
 func New(enabled bool, apiKey, model string) *Service {
-	if model == "" {
-		model = defaultModel
-	}
-
 	return &Service{
-		enabled:  enabled,
-		apiKey:   strings.TrimSpace(apiKey),
-		model:    model,
-		endpoint: defaultEndpoint,
+		enabled: enabled,
+		apiKey:  strings.TrimSpace(apiKey),
 		// Longer than the barcode lookup on purpose: this is a deliberate tap
 		// with a spinner, not somebody standing there with a tin in hand.
-		client: &http.Client{Timeout: 30 * time.Second},
+		client: llm.NewClient(model, 30*time.Second),
 	}
 }
 
@@ -119,28 +103,6 @@ Rules:
 Reply with JSON only, no prose and no code fence:
 {"ideas":[{"title":"...","why":"...","uses":["..."],"missing":["..."]}]}`
 
-type anthropicRequest struct {
-	Model     string             `json:"model"`
-	MaxTokens int                `json:"max_tokens"`
-	System    string             `json:"system"`
-	Messages  []anthropicMessage `json:"messages"`
-}
-
-type anthropicMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type anthropicResponse struct {
-	Content []struct {
-		Type string `json:"type"`
-		Text string `json:"text"`
-	} `json:"content"`
-	Error *struct {
-		Message string `json:"message"`
-	} `json:"error"`
-}
-
 // Suggest asks for meal ideas built on the given stock, using the group's key
 // or, when it has none, the server-wide one.
 func (s *Service) Suggest(ctx context.Context, apiKey string, stock []Stock) ([]Idea, error) {
@@ -160,44 +122,12 @@ func (s *Service) Suggest(ctx context.Context, apiKey string, stock []Stock) ([]
 		return nil, ErrEmptyPantry
 	}
 
-	body, err := json.Marshal(anthropicRequest{
-		Model:     s.model,
-		MaxTokens: 1024,
-		System:    systemPrompt,
-		Messages:  []anthropicMessage{{Role: "user", Content: describe(stock)}},
-	})
+	text, err := s.client.Complete(ctx, key, systemPrompt, describe(stock), 1024)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.endpoint, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("content-type", "application/json")
-	req.Header.Set("x-api-key", key)
-	req.Header.Set("anthropic-version", anthropicVersion)
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var parsed anthropicResponse
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, fmt.Errorf("meal ideas: unreadable response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		if parsed.Error != nil {
-			return nil, fmt.Errorf("meal ideas: %s", parsed.Error.Message)
-		}
-		return nil, fmt.Errorf("meal ideas: unexpected status %d", resp.StatusCode)
-	}
-
-	return parseIdeas(textOf(parsed), stock)
+	return parseIdeas(text, stock)
 }
 
 // describe renders the pantry as the short list the model works from. Sorted by
@@ -236,27 +166,9 @@ func urgency(s Stock) int {
 	return *s.DaysLeft
 }
 
-func textOf(r anthropicResponse) string {
-	var b strings.Builder
-	for _, part := range r.Content {
-		if part.Type == "text" {
-			b.WriteString(part.Text)
-		}
-	}
-	return b.String()
-}
-
 // parseIdeas reads the model's answer and strips anything it made up.
 func parseIdeas(text string, stock []Stock) ([]Idea, error) {
-	raw := strings.TrimSpace(text)
-
-	// A fenced block is asked against but arrives often enough to be worth
-	// tolerating rather than failing on.
-	if start := strings.Index(raw, "{"); start >= 0 {
-		if end := strings.LastIndex(raw, "}"); end > start {
-			raw = raw[start : end+1]
-		}
-	}
+	raw := llm.ExtractJSON(text)
 
 	var parsed struct {
 		Ideas []Idea `json:"ideas"`

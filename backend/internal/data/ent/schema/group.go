@@ -41,6 +41,13 @@ func (Group) Fields() []ent.Field {
 			Sensitive().
 			MaxLen(255).
 			Optional(),
+		// Transcription key for voice entry. A second provider is needed because
+		// the model that reads the transcript cannot take audio at all. Same
+		// treatment as the other one: sensitive, plain text, never returned.
+		field.String("voice_api_key").
+			Sensitive().
+			MaxLen(255).
+			Optional(),
 		// How many people the emergency stockpile has to feed, and for how
 		// long. Both are household facts rather than per-user preferences, so
 		// they live with the group.

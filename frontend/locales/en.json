@@ -117,6 +117,17 @@
         },
         "quick_menu": {
             "shortcut_hint": "Use the number keys to quickly select an action."
+        },
+        "voice": {
+            "failed": "Could not read that recording",
+            "hint": "Or just say what it is",
+            "no_microphone": "No microphone, or access was refused",
+            "quantity": "Heard: {n} of them",
+            "quantity_failed": "The item was created, but the quantity could not be set",
+            "start": "Speak it",
+            "stop": "Stop ({n} s)",
+            "unsupported": "This browser cannot record audio",
+            "working": "Listening..."
         }
     },
     "global": {
@@ -556,7 +567,16 @@
         "update_language": "Update Language",
         "url": "URL",
         "user_profile": "User Profile",
-        "user_profile_sub": "Invite users, and manage your account."
+        "user_profile_sub": "Invite users, and manage your account.",
+        "voice": {
+            "active": "Active. The microphone appears when you add an item.",
+            "explainer": "Say what you are adding instead of typing it. The recording goes to OpenAI to be transcribed; the words are then turned into fields by Anthropic, using the key above. Nothing is created without you confirming it. Get a key at platform.openai.com. Roughly 0.6 cents per minute of speech.",
+            "inactive": "No key stored, so nothing is ever recorded or sent.",
+            "label": "OpenAI API key",
+            "needs_other": "This also needs the Anthropic key above to turn the transcript into fields.",
+            "subtitle": "For adding items by speaking them",
+            "title": "Voice entry"
+        }
     },
     "scanner": {
         "error": "An error occurred while scanning",

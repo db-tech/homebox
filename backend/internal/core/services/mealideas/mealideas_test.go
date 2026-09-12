@@ -34,7 +34,7 @@ func stub(t *testing.T, reply string, status int) (*Service, *http.Request, *[]b
 	t.Cleanup(server.Close)
 
 	svc := New(true, "test-key", "")
-	svc.endpoint = server.URL
+	svc.client.Endpoint = server.URL
 
 	return svc, &seen, &body
 }
@@ -117,7 +117,7 @@ func TestSuggest_SendsOnlyNameQuantityAndDaysLeft(t *testing.T) {
 	}
 
 	assert.Equal(t, "test-key", seen.Header.Get("x-api-key"))
-	assert.Equal(t, anthropicVersion, seen.Header.Get("anthropic-version"))
+	assert.Equal(t, "2023-06-01", seen.Header.Get("anthropic-version"))
 }
 
 func TestSuggest_MostUrgentItemGoesFirst(t *testing.T) {

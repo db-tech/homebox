@@ -90,6 +90,20 @@ func (gc *GroupCreate) SetNillableRecipesAPIKey(s *string) *GroupCreate {
 	return gc
 }
 
+// SetVoiceAPIKey sets the "voice_api_key" field.
+func (gc *GroupCreate) SetVoiceAPIKey(s string) *GroupCreate {
+	gc.mutation.SetVoiceAPIKey(s)
+	return gc
+}
+
+// SetNillableVoiceAPIKey sets the "voice_api_key" field if the given value is not nil.
+func (gc *GroupCreate) SetNillableVoiceAPIKey(s *string) *GroupCreate {
+	if s != nil {
+		gc.SetVoiceAPIKey(*s)
+	}
+	return gc
+}
+
 // SetHouseholdSize sets the "household_size" field.
 func (gc *GroupCreate) SetHouseholdSize(i int) *GroupCreate {
 	gc.mutation.SetHouseholdSize(i)
@@ -328,6 +342,11 @@ func (gc *GroupCreate) check() error {
 			return &ValidationError{Name: "recipes_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.recipes_api_key": %w`, err)}
 		}
 	}
+	if v, ok := gc.mutation.VoiceAPIKey(); ok {
+		if err := group.VoiceAPIKeyValidator(v); err != nil {
+			return &ValidationError{Name: "voice_api_key", err: fmt.Errorf(`ent: validator failed for field "Group.voice_api_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -382,6 +401,10 @@ func (gc *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := gc.mutation.RecipesAPIKey(); ok {
 		_spec.SetField(group.FieldRecipesAPIKey, field.TypeString, value)
 		_node.RecipesAPIKey = value
+	}
+	if value, ok := gc.mutation.VoiceAPIKey(); ok {
+		_spec.SetField(group.FieldVoiceAPIKey, field.TypeString, value)
+		_node.VoiceAPIKey = value
 	}
 	if value, ok := gc.mutation.HouseholdSize(); ok {
 		_spec.SetField(group.FieldHouseholdSize, field.TypeInt, value)

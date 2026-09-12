@@ -97,6 +97,7 @@ type (
 		LabelPrinting     bool            `json:"labelPrinting"`
 		ProductLookup     bool            `json:"productLookup"`
 		MealIdeas         bool            `json:"mealIdeas"`
+		VoiceEntry        bool            `json:"voiceEntry"`
 	}
 )
 
@@ -136,6 +137,7 @@ func (ctrl *V1Controller) HandleBase(ready ReadyFunc, build Build) errchain.Hand
 			LabelPrinting:     ctrl.config.LabelMaker.PrintCommand != nil,
 			ProductLookup:     ctrl.svc.ProductLookup.Enabled(),
 			MealIdeas:         ctrl.svc.MealIdeas.Enabled(),
+			VoiceEntry:        ctrl.svc.VoiceEntry.Enabled(),
 		})
 	}
 }

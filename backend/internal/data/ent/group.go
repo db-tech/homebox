@@ -28,6 +28,8 @@ type Group struct {
 	Currency string `json:"currency,omitempty"`
 	// RecipesAPIKey holds the value of the "recipes_api_key" field.
 	RecipesAPIKey string `json:"-"`
+	// VoiceAPIKey holds the value of the "voice_api_key" field.
+	VoiceAPIKey string `json:"-"`
 	// HouseholdSize holds the value of the "household_size" field.
 	HouseholdSize int `json:"household_size,omitempty"`
 	// EmergencyDays holds the value of the "emergency_days" field.
@@ -131,7 +133,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case group.FieldHouseholdSize, group.FieldEmergencyDays:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldCurrency, group.FieldRecipesAPIKey, group.FieldEmergencyChecklist:
+		case group.FieldName, group.FieldCurrency, group.FieldRecipesAPIKey, group.FieldVoiceAPIKey, group.FieldEmergencyChecklist:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -187,6 +189,12 @@ func (gr *Group) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field recipes_api_key", values[i])
 			} else if value.Valid {
 				gr.RecipesAPIKey = value.String
+			}
+		case group.FieldVoiceAPIKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field voice_api_key", values[i])
+			} else if value.Valid {
+				gr.VoiceAPIKey = value.String
 			}
 		case group.FieldHouseholdSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -290,6 +298,8 @@ func (gr *Group) String() string {
 	builder.WriteString(gr.Currency)
 	builder.WriteString(", ")
 	builder.WriteString("recipes_api_key=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("voice_api_key=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("household_size=")
 	builder.WriteString(fmt.Sprintf("%v", gr.HouseholdSize))

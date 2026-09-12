@@ -25,6 +25,8 @@ const (
 	FieldCurrency = "currency"
 	// FieldRecipesAPIKey holds the string denoting the recipes_api_key field in the database.
 	FieldRecipesAPIKey = "recipes_api_key"
+	// FieldVoiceAPIKey holds the string denoting the voice_api_key field in the database.
+	FieldVoiceAPIKey = "voice_api_key"
 	// FieldHouseholdSize holds the string denoting the household_size field in the database.
 	FieldHouseholdSize = "household_size"
 	// FieldEmergencyDays holds the string denoting the emergency_days field in the database.
@@ -106,6 +108,7 @@ var Columns = []string{
 	FieldName,
 	FieldCurrency,
 	FieldRecipesAPIKey,
+	FieldVoiceAPIKey,
 	FieldHouseholdSize,
 	FieldEmergencyDays,
 	FieldEmergencyChecklist,
@@ -134,6 +137,8 @@ var (
 	DefaultCurrency string
 	// RecipesAPIKeyValidator is a validator for the "recipes_api_key" field. It is called by the builders before save.
 	RecipesAPIKeyValidator func(string) error
+	// VoiceAPIKeyValidator is a validator for the "voice_api_key" field. It is called by the builders before save.
+	VoiceAPIKeyValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -169,6 +174,11 @@ func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
 // ByRecipesAPIKey orders the results by the recipes_api_key field.
 func ByRecipesAPIKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRecipesAPIKey, opts...).ToFunc()
+}
+
+// ByVoiceAPIKey orders the results by the voice_api_key field.
+func ByVoiceAPIKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVoiceAPIKey, opts...).ToFunc()
 }
 
 // ByHouseholdSize orders the results by the household_size field.

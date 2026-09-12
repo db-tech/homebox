@@ -11,6 +11,7 @@
   import MdiPencil from "~icons/mdi/pencil";
   import MdiAccountMultiple from "~icons/mdi/account-multiple";
   import MdiChefHat from "~icons/mdi/chef-hat";
+  import MdiMicrophone from "~icons/mdi/microphone";
   import { getLocaleCode } from "~/composables/use-formatters";
 
   definePageMeta({
@@ -113,14 +114,16 @@
   const recipesKey = ref("");
   const savingKey = ref(false);
 
-  async function saveRecipesKey(value: string) {
+  const voiceKey = ref("");
+
+  async function saveKey(field: "recipesApiKey" | "voiceApiKey", value: string) {
     if (!group.value) return;
 
     savingKey.value = true;
     const { data, error } = await api.group.update({
       name: group.value.name,
       currency: group.value.currency,
-      recipesApiKey: value,
+      [field]: value,
     });
     savingKey.value = false;
 
@@ -132,6 +135,7 @@
     // Never held on to and never read back: the server only ever says whether
     // there is one.
     recipesKey.value = "";
+    voiceKey.value = "";
     group.value = data;
     notify.success(value ? t("profile.recipes.saved") : t("profile.recipes.removed"));
   }
@@ -500,6 +504,63 @@
         </div>
       </BaseCard>
 
+      <BaseCard v-if="serverStatus?.voiceEntry">
+        <template #title>
+          <BaseSectionHeader class="pb-0">
+            <MdiMicrophone class="-mt-1 mr-2" />
+            <span> {{ $t("profile.voice.title") }} </span>
+            <template #description>
+              {{ $t("profile.voice.subtitle") }}
+            </template>
+          </BaseSectionHeader>
+        </template>
+
+        <div v-if="group" class="p-5 pt-0">
+          <p class="mb-3 text-sm">{{ $t("profile.voice.explainer") }}</p>
+
+          <div class="flex flex-wrap items-end gap-2">
+            <div class="form-control min-w-64 flex-1">
+              <label class="label" for="voice-key">
+                <span class="label-text">{{ $t("profile.voice.label") }}</span>
+              </label>
+              <input
+                id="voice-key"
+                v-model="voiceKey"
+                type="password"
+                autocomplete="off"
+                class="input input-bordered"
+                :placeholder="group.hasVoiceApiKey ? $t('profile.recipes.stored') : 'sk-...'"
+              />
+            </div>
+
+            <BaseButton
+              size="sm"
+              :disabled="!voiceKey.trim() || savingKey"
+              @click="saveKey('voiceApiKey', voiceKey.trim())"
+            >
+              {{ $t("profile.recipes.save") }}
+            </BaseButton>
+
+            <BaseButton
+              v-if="group.hasVoiceApiKey"
+              size="sm"
+              class="btn-ghost"
+              :disabled="savingKey"
+              @click="saveKey('voiceApiKey', '')"
+            >
+              {{ $t("profile.recipes.remove") }}
+            </BaseButton>
+          </div>
+
+          <p class="mt-3 text-sm text-base-content/60">
+            {{ group.hasVoiceApiKey ? $t("profile.voice.active") : $t("profile.voice.inactive") }}
+          </p>
+          <p v-if="group.hasVoiceApiKey && !group.hasRecipesApiKey" class="mt-1 text-sm text-warning">
+            {{ $t("profile.voice.needs_other") }}
+          </p>
+        </div>
+      </BaseCard>
+
       <BaseCard v-if="serverStatus?.mealIdeas">
         <template #title>
           <BaseSectionHeader class="pb-0">
@@ -532,7 +593,7 @@
             <BaseButton
               size="sm"
               :disabled="!recipesKey.trim() || savingKey"
-              @click="saveRecipesKey(recipesKey.trim())"
+              @click="saveKey('recipesApiKey', recipesKey.trim())"
             >
               {{ $t("profile.recipes.save") }}
             </BaseButton>
@@ -542,7 +603,7 @@
               size="sm"
               class="btn-ghost"
               :disabled="savingKey"
-              @click="saveRecipesKey('')"
+              @click="saveKey('recipesApiKey', '')"
             >
               {{ $t("profile.recipes.remove") }}
             </BaseButton>

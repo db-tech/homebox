@@ -257,6 +257,7 @@ func run(cfg *config.Config) error {
 		services.WithCurrencies(currencies),
 		services.WithProductLookup(cfg.Options.ProductLookup),
 		services.WithMealIdeas(cfg.Recipes.Enabled, cfg.Recipes.APIKey, cfg.Recipes.Model),
+		services.WithVoiceEntry(cfg.Voice.Enabled, cfg.Voice.APIKey),
 	)
 
 	// =========================================================================

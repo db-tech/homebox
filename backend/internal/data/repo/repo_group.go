@@ -31,6 +31,7 @@ func NewGroupRepository(db *ent.Client) *GroupRepository {
 			Currency:  strings.ToUpper(g.Currency),
 			// Whether, never what.
 			HasRecipesAPIKey: g.RecipesAPIKey != "",
+			HasVoiceAPIKey:   g.VoiceAPIKey != "",
 		}
 	}
 
@@ -61,6 +62,8 @@ type (
 		// key itself must not travel back to a browser, so there is no field
 		// here that could accidentally carry it.
 		HasRecipesAPIKey bool `json:"hasRecipesApiKey"`
+		// HasVoiceAPIKey likewise: whether, never what.
+		HasVoiceAPIKey bool `json:"hasVoiceApiKey"`
 	}
 
 	GroupUpdate struct {
@@ -71,6 +74,8 @@ type (
 		// renaming the group would otherwise wipe it. An empty string clears
 		// it, and anything else replaces it.
 		RecipesAPIKey *string `json:"recipesApiKey,omitempty"`
+		// VoiceAPIKey behaves identically: nil leaves it, "" clears it.
+		VoiceAPIKey *string `json:"voiceApiKey,omitempty"`
 	}
 
 	GroupInvitationCreate struct {
@@ -282,6 +287,14 @@ func (r *GroupRepository) GroupUpdate(ctx context.Context, id uuid.UUID, data Gr
 		}
 	}
 
+	if data.VoiceAPIKey != nil {
+		if key := strings.TrimSpace(*data.VoiceAPIKey); key == "" {
+			q.ClearVoiceAPIKey()
+		} else {
+			q.SetVoiceAPIKey(key)
+		}
+	}
+
 	return r.groupMapper.MapErr(q.Save(ctx))
 }
 
@@ -321,6 +334,18 @@ func (r *GroupRepository) RecipesAPIKey(ctx context.Context, id uuid.UUID) (stri
 	}
 
 	return entity.RecipesAPIKey, nil
+}
+
+// VoiceAPIKey reads the stored transcription key. Same reasoning as
+// RecipesAPIKey: it is its own call because everything returning a Group
+// returns it to a browser.
+func (r *GroupRepository) VoiceAPIKey(ctx context.Context, id uuid.UUID) (string, error) {
+	entity, err := r.db.Group.Get(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	return entity.VoiceAPIKey, nil
 }
 
 func (r *GroupRepository) GroupByID(ctx context.Context, id uuid.UUID) (Group, error) {

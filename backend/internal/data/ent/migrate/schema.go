@@ -151,6 +151,7 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 255},
 		{Name: "currency", Type: field.TypeString, Default: "usd"},
 		{Name: "recipes_api_key", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "voice_api_key", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "household_size", Type: field.TypeInt, Nullable: true},
 		{Name: "emergency_days", Type: field.TypeInt, Nullable: true},
 		{Name: "emergency_checklist", Type: field.TypeString, Nullable: true, Size: 2147483647},

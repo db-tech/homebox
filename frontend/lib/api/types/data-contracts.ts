@@ -74,6 +74,8 @@ export interface DocumentOut {
 export interface Group {
   /** Whether a meal-ideas API key is stored. The key itself is never returned. */
   hasRecipesApiKey: boolean;
+  /** Whether a transcription key is stored. The key itself is never returned. */
+  hasVoiceApiKey: boolean;
   createdAt: Date | string;
   currency: string;
   id: string;
@@ -96,6 +98,8 @@ export interface GroupUpdate {
    * pass a value to replace it. An update that omits it must never clear it.
    */
   recipesApiKey?: string;
+  /** Same three-valued rules as recipesApiKey. */
+  voiceApiKey?: string;
   currency: string;
   name: string;
 }
@@ -517,6 +521,7 @@ export interface APISummary {
   message: string;
   productLookup: boolean;
   mealIdeas: boolean;
+  voiceEntry: boolean;
   title: string;
   versions: string[];
 }

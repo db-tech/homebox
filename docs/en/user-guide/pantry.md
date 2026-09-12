@@ -201,6 +201,59 @@ You can also type a barcode into an item's **Pantry** card in the edit form. The
 same product in two places is fine — barcodes are not required to be unique, and
 a scan that matches several items simply lists them all.
 
+## Adding an item by speaking it
+
+A scanner only helps with things that carry a barcode. For everything else,
+**Speak it** on the add-item dialog records a few seconds and fills the form in
+from what you said. *"Drei Packungen Varta AA Batterien, liegen in der
+Werkstattkiste"* becomes a name, a quantity and a description.
+
+Nothing is created by speaking. The fields are filled and you confirm them,
+which is not politeness: speech recognition mishears brand names more than
+anything else, and an item saved from a misheard name is worse than one typed
+slowly. What was heard is shown underneath in quotes, so a mishearing is visible
+rather than buried inside a tidied-up name.
+
+### What it can and cannot do
+
+The transcript is read by a language model with **no internet access**. It can
+correct *"warta a a"* to *"Varta AA"* and turn *"drei Packungen"* into a
+quantity of three from what it already knows. It cannot look the product up, so
+it cannot confirm that it exists, and it is instructed not to add details you
+did not say. A description mentioning a size or a colour you never mentioned
+would be invented, which has no place in an inventory.
+
+### Switching it on
+
+Two keys, because they do two different things and no single provider does both:
+
+- **Profile → Voice entry** takes an **OpenAI** key, which transcribes the
+  recording. Anthropic's models do not accept audio at all, which is why the key
+  you already have is not enough.
+- **Profile → Meal suggestions** takes the **Anthropic** key, which turns the
+  transcript into field values. Voice entry reuses it rather than asking for a
+  third.
+
+With only the OpenAI key stored the settings page says so. The microphone does
+not appear until both are there.
+
+Roughly 0.6 cents per minute of speech for the transcription, plus a fraction of
+a cent for reading it. Recordings stop themselves after 30 seconds, and the
+server refuses anything over 8 MB, so a microphone left open cannot run up a
+bill.
+
+### What leaves your server
+
+- The **recording** goes to OpenAI. Nothing else — no item names, no inventory,
+  no identifiers.
+- The **transcript** then goes to Anthropic. The audio does not.
+- Only when you press the button. Nothing is recorded in the background, and
+  with no key stored the browser never asks for the microphone at all.
+
+`HBOX_VOICE_ENABLED=false` forbids the feature outright, whatever any group has
+stored. `HBOX_VOICE_API_KEY` is an optional server-wide transcription key for
+deployments that would rather keep the secret out of the database.
+
 ## Emergency stock
 
 Germany's federal government publishes how much food a household should keep at
