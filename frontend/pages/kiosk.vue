@@ -35,7 +35,7 @@
 
   const { t } = useI18n();
   const api = useUserApi();
-  const { started, status, unresolved, tone, start, report, park } = useKioskShell();
+  const { started, status, unresolved, tone, start, report, park, describeFailure } = useKioskShell();
 
   type Mode = "consume" | "fill";
   const mode = useLocalStorage<Mode>("homebox/kiosk/mode", "consume");
@@ -63,6 +63,25 @@
    */
   const streak = ref(0);
   const lastItemId = ref<string | null>(null);
+
+  /**
+   * Reports a failed request with the reason attached, and parks the barcode.
+   *
+   * A terminal that only says "that did not work" makes somebody walk over and
+   * ask. Saying what the server said turns the next failure into one sentence
+   * instead of a round trip - and parking it means the tin that left the
+   * cupboard is not silently uncounted either.
+   */
+  function failed(title: string, detail: string, result: { status?: number; data?: unknown }, code?: string) {
+    const reason = describeFailure(result);
+    console.error("kiosk booking failed", { title, detail, code, status: result.status, body: result.data });
+
+    if (code) {
+      park(code, "book_failed", reason);
+    }
+
+    report({ kind: "error", title, detail, note: reason });
+  }
 
   function forgetStreak() {
     streak.value = 0;
@@ -95,18 +114,20 @@
     }
 
     const item = choice.item;
-    const { data, error } = await api.pantry.record(item.id, {
+    const result = await api.pantry.record(item.id, {
       amount: 1,
       type: "consume",
       note: "",
       date: new Date(),
     });
 
-    if (error || !data) {
+    if (result.error || !result.data) {
       forgetStreak();
-      report({ kind: "error", title: t("pantry.kiosk.book_failed"), detail: item.name });
+      failed(t("pantry.kiosk.book_failed"), item.name, result, code);
       return;
     }
+
+    const data = result.data;
 
     const booked: Booking = { kind: "consume", itemId: item.id, entryId: data.id, name: item.name };
     undoStack.value = [...undoStack.value, booked].slice(-20);
@@ -215,18 +236,20 @@
 
   /** One more of a batch that is already there. */
   async function addToBatch(code: string, item: ItemSummary) {
-    const { data, error } = await api.pantry.record(item.id, {
+    const result = await api.pantry.record(item.id, {
       amount: 1,
       type: "restock",
       note: "",
       date: new Date(),
     });
 
-    if (error || !data) {
+    if (result.error || !result.data) {
       forgetStreak();
-      report({ kind: "error", title: t("pantry.kiosk.book_failed"), detail: item.name });
+      failed(t("pantry.kiosk.book_failed"), item.name, result, code);
       return;
     }
+
+    const data = result.data;
 
     settled.value = { ...settled.value, [code]: item.id };
     lastName.value = item.name;
@@ -264,7 +287,10 @@
 
   async function createBatch(code: string, date: Date | null) {
     if (!location.value) {
-      report({ kind: "error", title: t("pantry.kiosk.pick_location") });
+      // Distinct from a failed request on purpose: this one is fixed by
+      // picking a place at the top, not by anybody looking at a log.
+      console.error("kiosk: no location set when creating", { code });
+      report({ kind: "error", title: t("pantry.kiosk.pick_location"), detail: code });
       return;
     }
 
@@ -276,7 +302,7 @@
       return;
     }
 
-    const { data, error } = await api.items.create({
+    const created = await api.items.create({
       parentId: null,
       name,
       description: "",
@@ -292,12 +318,13 @@
       emergencyCategory: pendingCategory.value,
     });
 
-    if (error || !data) {
+    if (created.error || !created.data) {
       forgetStreak();
-      park(code, "create_failed");
-      report({ kind: "error", title: t("pantry.kiosk.create_failed"), detail: code, note: t("pantry.kiosk.noted") });
+      failed(t("pantry.kiosk.create_failed"), name, created, code);
       return;
     }
+
+    const data = created.data;
 
     settled.value = { ...settled.value, [code]: data.id };
     lastName.value = name;
@@ -408,26 +435,28 @@
     busy.value = true;
     try {
       if (last.kind === "created") {
-        const { error } = await api.items.delete(last.itemId);
-        if (error) {
-          report({ kind: "error", title: t("pantry.kiosk.undo_failed"), detail: last.name });
+        const removed = await api.items.delete(last.itemId);
+        if (removed.error) {
+          failed(t("pantry.kiosk.undo_failed"), last.name, removed);
           return;
         }
 
         const { [last.barcode]: _dropped, ...rest } = settled.value;
         settled.value = rest;
       } else {
-        const { data: back, error } = await api.pantry.record(last.itemId, {
+        const reversal = await api.pantry.record(last.itemId, {
           amount: 1,
           type: last.kind === "consume" ? "restock" : "consume",
           note: "",
           date: new Date(),
         });
 
-        if (error || !back) {
-          report({ kind: "error", title: t("pantry.kiosk.undo_failed"), detail: last.name });
+        if (reversal.error || !reversal.data) {
+          failed(t("pantry.kiosk.undo_failed"), last.name, reversal);
           return;
         }
+
+        const back = reversal.data;
 
         await api.pantry.deleteEntry(last.entryId);
         await api.pantry.deleteEntry(back.id);
@@ -721,6 +750,7 @@
           <div class="flex-1">
             <p class="font-mono text-lg">{{ entry.code }}</p>
             <p class="text-xs text-base-content/50">{{ $t(`pantry.kiosk.reason_${entry.reason}`) }}</p>
+            <p v-if="entry.detail" class="font-mono text-xs text-error/70">{{ entry.detail }}</p>
           </div>
           <button class="btn btn-ghost btn-sm" @click="dismissUnresolved(i)">
             {{ $t("pantry.kiosk.list_done") }}

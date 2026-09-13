@@ -19,6 +19,8 @@ export interface UnresolvedScan {
   code: string;
   at: string;
   reason: string;
+  /** What the server actually said, when there was anything to quote. */
+  detail?: string;
 }
 
 export function useKioskShell() {
@@ -86,8 +88,30 @@ export function useKioskShell() {
     sound(next.kind);
   }
 
-  function park(code: string, reason: string) {
-    unresolved.value = [{ code, at: new Date().toISOString(), reason }, ...unresolved.value].slice(0, 100);
+  /**
+   * Why a request failed, in words that can be read off the wall.
+   *
+   * "Could not book that" on its own costs a round trip: somebody has to come
+   * and ask what went wrong, and by then the screen has moved on. The status
+   * and whatever the server said are worth the two lines of code.
+   */
+  function describeFailure(result: { status?: number; data?: unknown }): string {
+    const body = result.data as { error?: string } | undefined;
+    const message = typeof body?.error === "string" ? body.error : "";
+    const status = result.status ?? 0;
+
+    if (message && status) return `${status} ${message}`;
+    if (message) return message;
+    if (status) return String(status);
+
+    // fetch rejected before there was a response at all.
+    return "offline";
+  }
+
+  function park(code: string, reason: string, detail?: string) {
+    // The detail is kept as well as shown: a red screen is gone by the time
+    // somebody walks over to look at it, and the reason is the whole point.
+    unresolved.value = [{ code, at: new Date().toISOString(), reason, detail }, ...unresolved.value].slice(0, 100);
   }
 
   // ---------------------------------------------------------------------------
@@ -162,5 +186,5 @@ export function useKioskShell() {
     }
   });
 
-  return { started, status, unresolved, tone, start, report, park };
+  return { started, status, unresolved, tone, start, report, park, describeFailure };
 }
