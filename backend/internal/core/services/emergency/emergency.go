@@ -20,7 +20,17 @@
 // means a tin and a bottle can be added together without a conversion table.
 package emergency
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
+
+var (
+	// ErrClassifyDisabled is returned when sorting items by model is switched off.
+	ErrClassifyDisabled = errors.New("stockpile classification is disabled")
+	// ErrClassifyNoKey is returned when it is on but no API key is configured.
+	ErrClassifyNoKey = errors.New("stockpile classification needs an Anthropic API key")
+)
 
 // Category is one of the groups the federal table is broken into.
 type Category string

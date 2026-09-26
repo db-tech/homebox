@@ -2,9 +2,10 @@
   import { useI18n } from "vue-i18n";
   import { categoryOrder, checklist, formatAmount } from "~~/lib/pantry/emergency";
   import type { EmergencyCategory } from "~~/lib/pantry/emergency";
-  import type { EmergencyResult } from "~~/lib/api/types/data-contracts";
+  import type { EmergencyResult, StockSuggestion } from "~~/lib/api/types/data-contracts";
   import MdiShieldHome from "~icons/mdi/shield-home";
   import MdiClipboardCheck from "~icons/mdi/clipboard-check-outline";
+  import MdiAutoFix from "~icons/mdi/auto-fix";
 
   /**
    * The pantry measured against the German federal stockpiling recommendation.
@@ -65,6 +66,67 @@
 
     await load();
   }
+
+  // Sorting existing items into the groups.
+  //
+  // Two sources: the product database knows what a package holds, the model can
+  // only say what a name probably is. Which one a number came from is shown, so
+  // the percentage stays something that can be trusted.
+  const suggestions = ref<StockSuggestion[]>([]);
+  const suggesting = ref(false);
+  const applying = ref(false);
+  const asked = ref(false);
+  const remaining = ref(0);
+  const note = ref("");
+
+  async function fetchSuggestions() {
+    suggesting.value = true;
+    asked.value = true;
+
+    const { data, error } = await api.pantry.stockSuggestions();
+    suggesting.value = false;
+
+    if (error || !data) {
+      toast.error(t("pantry.emergency.suggest_failed"));
+      return;
+    }
+
+    suggestions.value = data.suggestions ?? [];
+    remaining.value = data.remaining ?? 0;
+    note.value = data.note ?? "";
+  }
+
+  /** Drops one proposal without touching the others. */
+  function discard(id: string) {
+    suggestions.value = suggestions.value.filter(s => s.id !== id);
+  }
+
+  async function applyAll() {
+    // Anything left with no group and no size would be a no-op write.
+    const worth = suggestions.value.filter(s => s.category !== "" || s.weight > 0);
+    if (worth.length === 0) return;
+
+    applying.value = true;
+    const { data, error } = await api.pantry.assignStock(
+      worth.map(s => ({ id: s.id, emergencyCategory: s.category, netWeight: s.weight }))
+    );
+    applying.value = false;
+
+    if (error || !data) {
+      toast.error(t("pantry.emergency.apply_failed"));
+      return;
+    }
+
+    toast.success(t("pantry.emergency.applied", { n: data.changed }));
+    suggestions.value = [];
+    asked.value = false;
+
+    // The balance is built from exactly what just changed, so showing the old
+    // one next to the new assignments would be wrong until somebody reloaded.
+    await load();
+  }
+
+  const estimated = computed(() => suggestions.value.filter(s => s.weightSource === "estimate").length);
 
   function toggle(id: string) {
     const next = new Set(ticked.value);
@@ -187,6 +249,88 @@
     <BaseCard v-if="result && (result.unweighed.length > 0 || result.uncategorised.length > 0)">
       <template #title>{{ $t("pantry.emergency.gaps_title") }}</template>
       <template #subtitle>{{ $t("pantry.emergency.gaps_subtitle") }}</template>
+
+      <div class="border-t border-gray-300 p-6">
+        <BaseButton :loading="suggesting" :disabled="applying" @click="fetchSuggestions">
+          <template #icon><MdiAutoFix /></template>
+          {{ asked ? $t("pantry.emergency.suggest_again") : $t("pantry.emergency.suggest") }}
+        </BaseButton>
+        <p class="mt-2 text-sm text-base-content/60">{{ $t("pantry.emergency.suggest_hint") }}</p>
+
+        <p v-if="note" class="mt-2 text-sm text-warning">{{ note }}</p>
+
+        <p v-if="asked && !suggesting && suggestions.length === 0" class="mt-3 text-sm">
+          {{ $t("pantry.emergency.suggest_empty") }}
+        </p>
+
+        <template v-if="suggestions.length">
+          <p v-if="estimated > 0" class="mt-3 text-sm text-warning">
+            {{ $t("pantry.emergency.estimated_warning", { n: estimated }) }}
+          </p>
+
+          <div class="mt-3 overflow-x-auto">
+            <table class="table-sm table">
+              <thead>
+                <tr>
+                  <th>{{ $t("global.name") }}</th>
+                  <th>{{ $t("items.emergency_category") }}</th>
+                  <th>{{ $t("items.net_weight") }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="entry in suggestions" :key="entry.id">
+                  <td class="max-w-48 truncate">{{ entry.name }}</td>
+                  <td>
+                    <select v-model="entry.category" class="select select-bordered select-sm">
+                      <option value="">{{ $t("items.emergency_category_none") }}</option>
+                      <option v-for="c in categoryOrder" :key="c" :value="c">
+                        {{ $t(`pantry.emergency.category.${c}`) }}
+                      </option>
+                    </select>
+                    <span v-if="entry.categorySource === 'estimate'" class="badge badge-ghost badge-sm ml-1">
+                      {{ $t("pantry.emergency.guessed") }}
+                    </span>
+                  </td>
+                  <td>
+                    <input
+                      v-model.number="entry.weight"
+                      type="number"
+                      min="0"
+                      class="input input-bordered input-sm w-24"
+                    />
+                    <span
+                      v-if="entry.weightSource"
+                      class="badge badge-sm ml-1"
+                      :class="entry.weightSource === 'estimate' ? 'badge-warning' : 'badge-ghost'"
+                    >
+                      {{
+                        entry.weightSource === "estimate"
+                          ? $t("pantry.emergency.guessed")
+                          : $t("pantry.emergency.from_database")
+                      }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-ghost btn-xs" @click="discard(entry.id)">
+                      {{ $t("pantry.emergency.skip") }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <BaseButton :loading="applying" @click="applyAll">
+              {{ $t("pantry.emergency.apply", { n: suggestions.length }) }}
+            </BaseButton>
+            <span v-if="remaining > 0" class="text-sm text-base-content/60">
+              {{ $t("pantry.emergency.remaining", { n: remaining }) }}
+            </span>
+          </div>
+        </template>
+      </div>
 
       <div class="flex flex-col gap-4 border-t border-gray-300 p-6">
         <div v-if="result.unweighed.length">

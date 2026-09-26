@@ -592,6 +592,37 @@ export interface MealIdeasResult {
   ideas: MealIdeasIdea[];
 }
 
+export interface StockSuggestion {
+  id: string;
+  name: string;
+  currentCategory: string;
+  currentWeight: number;
+  category: string;
+  weight: number;
+  /** "openfoodfacts" for a manufacturer's figure, "estimate" for the model's. */
+  weightSource?: string;
+  categorySource?: string;
+}
+
+export interface StockSuggestionResult {
+  suggestions: StockSuggestion[];
+  /** Items with gaps that this round did not look at. */
+  remaining: number;
+  /** False when the model was not consulted, with `note` saying why. */
+  classified: boolean;
+  note?: string;
+}
+
+export interface StockpileAssignment {
+  id: string;
+  emergencyCategory: string;
+  netWeight: number;
+}
+
+export interface StockAssignResult {
+  changed: number;
+}
+
 export interface EmergencyLine {
   category: string;
   targetGrams: number;

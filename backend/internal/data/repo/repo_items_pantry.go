@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -216,6 +217,59 @@ func (e *ItemsRepository) QueryEmergencyStock(ctx context.Context, gid uuid.UUID
 	).WithLabel().WithLocation()
 
 	return mapItemsSummaryErr(q.All(ctx))
+}
+
+// StockpileAssignment is one item's group and package size.
+type StockpileAssignment struct {
+	ID        uuid.UUID `json:"id"`
+	Category  string    `json:"emergencyCategory"`
+	NetWeight int       `json:"netWeight"`
+}
+
+// AssignStockpileFields writes the group and package size onto several items at
+// once, touching nothing else about them.
+//
+// Deliberately not the ordinary item update: that one takes a whole item and
+// would need a name, a location and every other field just to set two numbers,
+// which is how a bulk edit ends up quietly clearing something.
+//
+// Returns how many items were changed. Ids that are not in the group are
+// skipped rather than failing the batch: one stale id in a list of eighty
+// should not throw the other seventy-nine away.
+func (e *ItemsRepository) AssignStockpileFields(ctx context.Context, gid uuid.UUID, assignments []StockpileAssignment) (int, error) {
+	changed := 0
+
+	for _, assignment := range assignments {
+		weight := assignment.NetWeight
+		if weight < 0 {
+			weight = 0
+		}
+
+		q := e.db.Item.Update().Where(
+			item.ID(assignment.ID),
+			item.HasGroupWith(group.ID(gid)),
+			item.Archived(false),
+		).SetNetWeight(weight)
+
+		if category := strings.TrimSpace(assignment.Category); category == "" {
+			q.ClearEmergencyCategory()
+		} else {
+			q.SetEmergencyCategory(item.EmergencyCategory(category))
+		}
+
+		affected, err := q.Save(ctx)
+		if err != nil {
+			return changed, err
+		}
+
+		changed += affected
+	}
+
+	if changed > 0 {
+		e.publishMutationEvent(gid)
+	}
+
+	return changed, nil
 }
 
 // QueryByBarcode returns the non-archived items of a group carrying the given

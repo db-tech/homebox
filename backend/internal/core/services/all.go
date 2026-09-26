@@ -3,6 +3,7 @@ package services
 
 import (
 	"github.com/sysadminsmedia/homebox/backend/internal/core/currencies"
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services/emergency"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/mealideas"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/productlookup"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services/voiceentry"
@@ -18,6 +19,10 @@ type AllServices struct {
 	ProductLookup     *productlookup.Service
 	MealIdeas         *mealideas.Service
 	VoiceEntry        *voiceentry.Service
+	// StockClassifier sorts existing items into the stockpiling groups. It runs
+	// on the same Anthropic key as the meal ideas rather than asking for a
+	// second one for the same provider.
+	StockClassifier *emergency.Classifier
 }
 
 type OptionsFunc func(*options)
@@ -95,6 +100,11 @@ func New(repos *repo.AllRepos, opts ...OptionsFunc) *AllServices {
 		Currencies:        currencies.NewCurrencyService(options.currencies),
 		ProductLookup:     productlookup.New(options.productLookup),
 		MealIdeas:         mealideas.New(options.mealIdeas.enabled, options.mealIdeas.apiKey, options.mealIdeas.model),
+		StockClassifier: emergency.NewClassifier(
+			options.mealIdeas.enabled,
+			options.mealIdeas.apiKey,
+			options.mealIdeas.model,
+		),
 		VoiceEntry: voiceentry.New(
 			options.voice.enabled,
 			options.voice.apiKey,

@@ -239,6 +239,79 @@ func TestItemsRepository_QueryPantryPicksProvisionsOnly(t *testing.T) {
 	assert.False(t, containsItem(got, empty.ID), "there is nothing to cook with an empty shelf")
 }
 
+func TestItemsRepository_AssignStockpileFields(t *testing.T) {
+	ctx := context.Background()
+	items := useItems(t, 3)
+
+	food := items[0]
+	tool := items[1]
+	other := items[2]
+
+	updatePantry(t, food, 4, 0, "4066666666666", time.Time{})
+	updatePantry(t, tool, 1, 0, "4077777777777", time.Time{})
+	updatePantry(t, other, 1, 0, "4088888888888", time.Time{})
+
+	changed, err := tRepos.Items.AssignStockpileFields(ctx, tGroup.ID, []StockpileAssignment{
+		{ID: food.ID, Category: "grains", NetWeight: 500},
+		// An empty category is how "not part of the stockpile" is written, and
+		// it has to clear rather than fail on the empty enum.
+		{ID: tool.ID, Category: "", NetWeight: 0},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 2, changed)
+
+	got, err := tRepos.Items.GetOne(ctx, food.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "grains", got.EmergencyCategory)
+	assert.Equal(t, 500, got.NetWeight)
+
+	untouched, err := tRepos.Items.GetOne(ctx, other.ID)
+	require.NoError(t, err)
+	assert.Empty(t, untouched.EmergencyCategory, "an item not in the batch must not change")
+
+	// Nothing else about the item may move. A bulk edit that needed the whole
+	// item would be one refactor away from clearing a name.
+	assert.Equal(t, food.Name, got.Name)
+	assert.Equal(t, 4, got.Quantity)
+	assert.Equal(t, "4066666666666", got.Barcode)
+}
+
+func TestItemsRepository_AssignStockpileFieldsIsGroupScoped(t *testing.T) {
+	ctx := context.Background()
+	itm := useItems(t, 1)[0]
+
+	other, err := tRepos.Groups.GroupCreate(ctx, "__test__.assign_other")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Groups.db.Group.DeleteOneID(other.ID).Exec(ctx) })
+
+	changed, err := tRepos.Items.AssignStockpileFields(ctx, other.ID, []StockpileAssignment{
+		{ID: itm.ID, Category: "grains", NetWeight: 500},
+	})
+	require.NoError(t, err)
+
+	// Skipped rather than an error: one stale id must not throw the rest of a
+	// batch away, and it certainly must not reach another group's item.
+	assert.Equal(t, 0, changed)
+
+	got, err := tRepos.Items.GetOne(ctx, itm.ID)
+	require.NoError(t, err)
+	assert.Empty(t, got.EmergencyCategory)
+}
+
+func TestItemsRepository_AssignStockpileFieldsRefusesNegativeWeight(t *testing.T) {
+	ctx := context.Background()
+	itm := useItems(t, 1)[0]
+
+	_, err := tRepos.Items.AssignStockpileFields(ctx, tGroup.ID, []StockpileAssignment{
+		{ID: itm.ID, Category: "grains", NetWeight: -400},
+	})
+	require.NoError(t, err)
+
+	got, err := tRepos.Items.GetOne(ctx, itm.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 0, got.NetWeight, "a negative size becomes unknown, not a negative total")
+}
+
 func TestItemsRepository_QueryByBarcode(t *testing.T) {
 	items := useItems(t, 2)
 	updatePantry(t, items[0], 1, 0, "4001234567890", time.Time{})

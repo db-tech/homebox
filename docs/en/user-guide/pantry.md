@@ -305,6 +305,38 @@ group. Neither is estimated. The page lists both sets under **Still to sort out*
 with a link straight to each item, because a figure you cannot trust is worse
 than a figure that admits what it is missing.
 
+### Sorting existing items out
+
+Filling in a group and a package size for a cupboard full of items one at a time
+is the tedious part, so **Sort these out** under *Still to sort out* proposes
+them in bulk.
+
+Two sources, deliberately in that order:
+
+- **The product database** is asked about every item that has a barcode but no
+  package size. What it returns is the manufacturer's figure for that exact
+  product — a fact, not a guess. Up to sixty per round, because OpenFoodFacts is
+  a volunteer service; press again for the next sixty.
+- **A language model** is then given the *names* of whatever is left, and sorts
+  them into the seven groups. Nothing else goes out: no barcodes, no quantities,
+  no locations. It uses the same Anthropic key as the meal suggestions, and with
+  no key stored this half simply does not run — the page says so and the product
+  database half still works.
+
+The model may also propose a package size, but **only where the product database
+had none**, and such a figure is labelled *estimated* in the list and counted in
+a warning above it. A size is a fact about one product and nothing in a name says
+whether a tin holds 400 g or 2.5 kg, so it matters that you can see which
+numbers the percentage rests on.
+
+Everything arrives as an editable list. Change a group, correct a size, skip a
+row, then **Apply all**. Nothing is written until you do — a wrong group would
+quietly distort the one figure this page exists to report.
+
+Expect to correct some. A jar of hazelnut spread comes back under *fruit*,
+because the product database files it among the nuts. That is what the list is
+for.
+
 ### The checklist
 
 The second half of the page is the BBK's own checklist — medicine cabinet,

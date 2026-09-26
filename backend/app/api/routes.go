@@ -154,6 +154,8 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Post("/items/voice-draft", chain.ToHandlerFunc(v1Ctrl.HandleVoiceDraft(), userMW...))
 		r.Get("/pantry/emergency", chain.ToHandlerFunc(v1Ctrl.HandleEmergencyStock(), userMW...))
 		r.Put("/pantry/emergency", chain.ToHandlerFunc(v1Ctrl.HandleEmergencySettings(), userMW...))
+		r.Get("/pantry/emergency/suggestions", chain.ToHandlerFunc(v1Ctrl.HandleStockSuggestions(), userMW...))
+		r.Put("/pantry/emergency/assign", chain.ToHandlerFunc(v1Ctrl.HandleStockAssign(), userMW...))
 
 		r.Get("/assets/{id}", chain.ToHandlerFunc(v1Ctrl.HandleAssetGet(), userMW...))
 

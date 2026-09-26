@@ -5,6 +5,9 @@ import type {
   ConsumptionSummary,
   EmergencyResult,
   EmergencySettings,
+  StockAssignResult,
+  StockpileAssignment,
+  StockSuggestionResult,
   ItemSummary,
   MealIdeasResult,
   ScanResult,
@@ -80,6 +83,22 @@ export class PantryAPI extends BaseAPI {
   /** Household size, number of days, and the ticked non-food checklist. */
   setEmergency(data: EmergencySettings) {
     return this.http.put<EmergencySettings, EmergencySettings>({ url: route("/pantry/emergency"), body: data });
+  }
+
+  /**
+   * Proposed groups and package sizes for items that lack them. Writes nothing:
+   * the suggestions come back to be looked at first.
+   */
+  stockSuggestions() {
+    return this.http.get<StockSuggestionResult>({ url: route("/pantry/emergency/suggestions") });
+  }
+
+  /** Applies the suggestions that survived being looked at. */
+  assignStock(assignments: StockpileAssignment[]) {
+    return this.http.put<{ assignments: StockpileAssignment[] }, StockAssignResult>({
+      url: route("/pantry/emergency/assign"),
+      body: { assignments },
+    });
   }
 
   deleteEntry(entryId: string) {
