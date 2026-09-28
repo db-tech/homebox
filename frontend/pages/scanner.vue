@@ -2,6 +2,7 @@
   import { useI18n } from "vue-i18n";
   import { decodeFrame } from "~~/lib/barcode/decode";
   import { classifyScan } from "~~/lib/barcode/scan-target";
+  import { cameraErrorDetail, classifyCameraError } from "~~/lib/barcode/camera-error";
   import { WedgeReader, isEditingTarget } from "~~/lib/barcode/wedge";
   import { categoryOrder } from "~~/lib/pantry/emergency";
   import type { ItemSummary, LocationOut, ProductlookupProduct } from "~~/lib/api/types/data-contracts";
@@ -82,6 +83,18 @@
   const handleError = (error: unknown) => {
     console.error("Scanner error:", error);
     errorMessage.value = t("scanner.error");
+  };
+
+  /**
+   * A camera that will not start needs a different thing done about it in each
+   * case, and one of them - another app holding the camera - cannot be guessed
+   * from inside the browser. So it says which, with the browser's own words
+   * underneath for when the classification is not enough.
+   */
+  const cameraProblem = (error: unknown) => {
+    console.error("Camera error:", error);
+    errorMessage.value = t(`scanner.camera.${classifyCameraError(error)}`);
+    lastEngineError.value = cameraErrorDetail(error);
   };
 
   async function lookupBarcode(code: string) {
@@ -303,7 +316,7 @@
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (err) {
-      handleError(err);
+      cameraProblem(err);
       return;
     }
 

@@ -7,6 +7,8 @@
   import MdiCartOutline from "~icons/mdi/cart-outline";
   import MdiChartLine from "~icons/mdi/chart-line";
   import MdiContentCopy from "~icons/mdi/content-copy";
+  import MdiMinus from "~icons/mdi/minus";
+  import MdiPlus from "~icons/mdi/plus";
   import MdiChefHat from "~icons/mdi/chef-hat";
   import MdiShieldHome from "~icons/mdi/shield-home";
 
@@ -36,6 +38,55 @@
     const { data } = await api.group.get();
     return data ?? null;
   });
+
+  /**
+   * Taking one out from the list you are already looking at.
+   *
+   * Without this, "I want to take out a packet of oats" meant opening the item
+   * and finding its consumption tab - which is why people end up reaching for
+   * the scanner for something a list could do in one tap.
+   */
+  const taking = ref<string | null>(null);
+
+  function takeOne(item: ItemSummary) {
+    return move(item, "consume");
+  }
+
+  function putOneBack(item: ItemSummary) {
+    return move(item, "restock");
+  }
+
+  async function move(item: ItemSummary, kind: "consume" | "restock") {
+    if (taking.value) return;
+    taking.value = item.id;
+
+    const { response, error } = await api.pantry.record(item.id, {
+      amount: 1,
+      type: kind,
+      note: "",
+      date: new Date(),
+    });
+    taking.value = null;
+
+    if (error) {
+      toast.error(
+        response.status === 409
+          ? t("pantry.scan.out_of_stock", { name: item.name })
+          : t("pantry.toast.failed_to_record")
+      );
+      return;
+    }
+
+    toast.success(
+      kind === "consume"
+        ? t("pantry.scan.took_one", { name: item.name })
+        : t("pantry.scan.added_one", { name: item.name })
+    );
+
+    // Both lists are built from the quantity that just changed, so both are
+    // stale now - and the item may have dropped off or on to one of them.
+    await Promise.all([refreshExpiring(), refreshLowStock()]);
+  }
 
   const ideas = ref<MealIdeasIdea[]>([]);
   const thinking = ref(false);
@@ -196,6 +247,7 @@
               <th>{{ $t("items.location") }}</th>
               <th>{{ $t("items.quantity") }}</th>
               <th>{{ $t("items.expiry_date") }}</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -211,6 +263,17 @@
               <td>{{ item.quantity }}</td>
               <td>
                 <span class="badge" :class="expiryClass(item)">{{ expiryLabel(item) }}</span>
+              </td>
+              <td>
+                <BaseButton
+                  size="sm"
+                  :disabled="item.quantity < 1 || taking === item.id"
+                  :loading="taking === item.id"
+                  @click="takeOne(item)"
+                >
+                  <template #icon><MdiMinus /></template>
+                  1
+                </BaseButton>
               </td>
             </tr>
           </tbody>
@@ -245,6 +308,7 @@
               <th>{{ $t("pantry.low_stock.in_stock") }}</th>
               <th>{{ $t("pantry.low_stock.minimum") }}</th>
               <th></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -261,6 +325,23 @@
               <td>{{ item.minStock }}</td>
               <td>
                 <span class="badge badge-warning">{{ $t("pantry.low_stock.shortfall", { n: shortfall(item) }) }}</span>
+              </td>
+              <td>
+                <div class="flex gap-1">
+                  <BaseButton
+                    size="sm"
+                    :disabled="item.quantity < 1 || taking === item.id"
+                    :loading="taking === item.id"
+                    @click="takeOne(item)"
+                  >
+                    <template #icon><MdiMinus /></template>
+                    1
+                  </BaseButton>
+                  <BaseButton size="sm" :disabled="taking === item.id" @click="putOneBack(item)">
+                    <template #icon><MdiPlus /></template>
+                    1
+                  </BaseButton>
+                </div>
               </td>
             </tr>
           </tbody>

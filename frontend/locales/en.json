@@ -592,6 +592,14 @@
         }
     },
     "scanner": {
+        "camera": {
+            "denied": "Camera access was refused. Allow it for this site in the browser settings.",
+            "in_use": "Another app is using the camera. Kiosk or surveillance apps that watch for motion hold it open - close that one first.",
+            "insecure": "The camera needs an HTTPS connection.",
+            "missing": "No camera found on this device.",
+            "unknown": "The camera could not be started.",
+            "unsupported_constraints": "This camera cannot deliver the requested picture. Pick a different one below."
+        },
         "error": "An error occurred while scanning",
         "invalid_url": "Invalid barcode URL",
         "no_sources": "No video sources available",

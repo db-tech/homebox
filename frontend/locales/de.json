@@ -592,6 +592,14 @@
         }
     },
     "scanner": {
+        "camera": {
+            "denied": "Der Kamerazugriff wurde abgelehnt. Erlaube ihn für diese Seite in den Browsereinstellungen.",
+            "in_use": "Eine andere App benutzt die Kamera. Kiosk- oder Überwachungs-Apps, die auf Bewegung achten, halten sie offen - schließe die erst.",
+            "insecure": "Die Kamera braucht eine HTTPS-Verbindung.",
+            "missing": "Auf diesem Gerät wurde keine Kamera gefunden.",
+            "unknown": "Die Kamera konnte nicht gestartet werden.",
+            "unsupported_constraints": "Diese Kamera kann das angeforderte Bild nicht liefern. Wähle unten eine andere."
+        },
         "error": "Beim Scannen ist ein Fehler aufgetreten",
         "invalid_url": "Ungültige Barcode-URL",
         "no_sources": "Keine Videoquellen verfügbar",
